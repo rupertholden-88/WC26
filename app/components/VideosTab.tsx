@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { VideoResult } from "@/app/lib/claude";
 import { Spinner, ErrorState, EmptyState, SectionLabel } from "./ui";
 
@@ -7,6 +8,81 @@ interface Props {
   data: VideoResult[] | null;
   loading: boolean;
   error: string | null;
+}
+
+function VideoCard({ v }: { v: VideoResult & { channel?: string } }) {
+  const [playing, setPlaying] = useState(false);
+
+  return (
+    <div className="bg-[#111e30] border border-[#1a2d45] rounded-xl overflow-hidden
+                    card-glow transition-all duration-200">
+      {playing ? (
+        /* Embedded YouTube player */
+        <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+          <iframe
+            className="absolute inset-0 w-full h-full"
+            src={`https://www.youtube.com/embed/${v.videoId}?autoplay=1&rel=0&modestbranding=1`}
+            title={v.match}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      ) : (
+        /* Thumbnail — tap to play */
+        <button
+          onClick={() => setPlaying(true)}
+          className="relative w-full aspect-video bg-[#0d1624] group block cursor-pointer"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg`}
+            alt=""
+            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-200"
+          />
+          {/* Play button */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full bg-[#f5a623] flex items-center justify-center
+                            shadow-xl group-hover:scale-110 transition-transform duration-200">
+              <svg width="16" height="18" viewBox="0 0 12 14" fill="none">
+                <path d="M1 1L11 7L1 13V1Z" fill="#080e1a" />
+              </svg>
+            </div>
+          </div>
+          {/* YouTube badge */}
+          <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[9px] font-bold
+                          tracking-wider px-1.5 py-0.5 rounded uppercase">
+            YouTube
+          </div>
+        </button>
+      )}
+
+      {/* Title row */}
+      <div className="px-4 py-3 flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-white
+                         tracking-wide leading-tight line-clamp-2">
+            {v.match}
+          </p>
+          <p className="text-[11px] text-[#4a6a8a] mt-1 font-medium">
+            Highlights · {v.channel ?? "ITV Sport"}
+          </p>
+        </div>
+        {/* Open in YouTube */}
+        <a
+          href={v.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="shrink-0 text-[#4a6a8a] hover:text-[#f5a623] transition-colors mt-0.5"
+          title="Open in YouTube"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  );
 }
 
 export default function VideosTab({ data, loading, error }: Props) {
@@ -22,50 +98,12 @@ export default function VideosTab({ data, loading, error }: Props) {
   return (
     <div className="fadein">
       <SectionLabel>World Cup highlights since 6pm {yestStr}</SectionLabel>
-
       {!data || data.length === 0 ? (
         <EmptyState message="No highlights found yet — check back after matches finish." />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-4">
           {data.map((v, i) => (
-            <a
-              key={i}
-              href={v.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group block bg-[#111e30] border border-[#1a2d45] rounded-xl overflow-hidden
-                         hover:border-[#f5a623] transition-all duration-200 no-underline"
-            >
-              {/* Thumbnail */}
-              <div className="relative aspect-video bg-[#0d1624]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg`}
-                  alt=""
-                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-200"
-                />
-                {/* Play overlay */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-[#f5a623] flex items-center justify-center
-                                  shadow-lg group-hover:scale-110 transition-transform duration-200">
-                    <svg width="14" height="16" viewBox="0 0 12 14" fill="none">
-                      <path d="M1 1L11 7L1 13V1Z" fill="#080e1a" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Match title */}
-              <div className="px-4 py-3">
-                <p className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-white
-                               tracking-wide leading-tight line-clamp-2">
-                  {v.match}
-                </p>
-                <p className="text-[11px] text-[#4a6a8a] mt-1 font-medium">
-                  Highlights · {(v as VideoResult & { channel?: string }).channel ?? "YouTube"}
-                </p>
-              </div>
-            </a>
+            <VideoCard key={i} v={v as VideoResult & { channel?: string }} />
           ))}
         </div>
       )}
