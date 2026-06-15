@@ -26,6 +26,7 @@ export interface Fixture {
   home: string;
   away: string;
   group: string;
+  status: "FINISHED" | "LIVE" | "UPCOMING";
   channel: "ITV" | "BBC";
 }
 
