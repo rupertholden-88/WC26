@@ -33,10 +33,7 @@ export async function GET() {
 
     const data = await res.json();
 
-    // Channels known to post real match highlights
     const TRUSTED = ["fifa", "itv sport", "fox sports", "bbc sport"];
-
-    // Words that indicate it's NOT a match highlights video
     const JUNK = [
       "reaction", "press conference", "interview", "podcast", "prediction",
       "verdict", "pundit", "studio", "debate", "talking point", "neville",
@@ -45,29 +42,28 @@ export async function GET() {
       "backs japan", "one day", "watch party", "watchalong",
     ];
 
-    const videos = (data.items ?? [])
-      .filter((item: { id: { videoId?: string }; snippet: { title: string; channelTitle: string } }) => {
-        if (!item.id.videoId) return false;
-        const title = item.snippet.title.toLowerCase();
-        const channel = item.snippet.channelTitle.toLowerCase();
+    const raw = (data.items ?? []).map((item: { id: { videoId?: string }; snippet: { title: string; channelTitle: string; publishedAt: string } }) => ({
+      videoId: item.id.videoId,
+      title: item.snippet.title,
+      channel: item.snippet.channelTitle,
+      publishedAt: item.snippet.publishedAt,
+      trusted: TRUSTED.some(c => item.snippet.channelTitle.toLowerCase().includes(c)),
+      hasHighlight: item.snippet.title.toLowerCase().includes("highlight") || item.snippet.title.toLowerCase().includes("full match") || item.snippet.title.toLowerCase().includes("extended"),
+      isJunk: JUNK.some(w => item.snippet.title.toLowerCase().includes(w)),
+    }));
 
-        if (!TRUSTED.some((c) => channel.includes(c))) return false;
-        if (JUNK.some((w) => title.includes(w))) return false;
-        if (!title.includes("highlight") && !title.includes("full match") && !title.includes("extended")) return false;
-
-        return true;
-      })
-      .map((item: { id: { videoId: string }; snippet: { title: string; channelTitle: string } }) => ({
-        match: item.snippet.title
-          .replace(/\b\d+\s*[-–]\s*\d+\b/g, "")
-          .replace(/\s{2,}/g, " ")
-          .trim(),
-        url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-        videoId: item.id.videoId,
-        channel: item.snippet.channelTitle,
+    const videos = raw
+      .filter((item: { videoId?: string; trusted: boolean; hasHighlight: boolean; isJunk: boolean }) =>
+        item.videoId && item.trusted && item.hasHighlight && !item.isJunk
+      )
+      .map((item: { videoId: string; title: string; channel: string }) => ({
+        match: item.title.replace(/\b\d+\s*[-–]\s*\d+\b/g, "").replace(/\s{2,}/g, " ").trim(),
+        url: `https://www.youtube.com/watch?v=${item.videoId}`,
+        videoId: item.videoId,
+        channel: item.channel,
       }));
 
-    return NextResponse.json({ videos });
+    return NextResponse.json({ videos, debug: { since, raw } });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
