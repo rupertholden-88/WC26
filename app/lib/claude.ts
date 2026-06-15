@@ -29,6 +29,16 @@ export interface Fixture {
   channel: "ITV" | "BBC";
 }
 
+export interface Result {
+  time: string;
+  home: string;
+  away: string;
+  homeScore: number;
+  awayScore: number;
+  group: string;
+  channel: "ITV" | "BBC";
+}
+
 async function apiFetch<T>(path: string): Promise<T> {
   const res = await fetch(path);
   const data = await res.json();
@@ -49,4 +59,9 @@ export async function fetchStandings(): Promise<GroupStanding[]> {
 export async function fetchFixtures(): Promise<Fixture[]> {
   const data = await apiFetch<{ fixtures: Fixture[] }>("/api/fixtures");
   return data.fixtures ?? [];
+}
+
+export async function fetchResults(): Promise<Result[]> {
+  const data = await apiFetch<{ results: Result[] }>("/api/results");
+  return data.results ?? [];
 }
