@@ -32,7 +32,7 @@ export async function GET() {
 
     const data = await res.json();
 
-    const since = Date.now() - 36 * 60 * 60 * 1000;
+    const since = Date.now() - 24 * 60 * 60 * 1000;
 
     const JUNK = [
       "reaction", "press conference", "interview", "podcast", "prediction",
