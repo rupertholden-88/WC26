@@ -23,6 +23,7 @@ export interface GroupStanding {
 export interface Fixture {
   date: "today" | "tomorrow";
   time: string;
+  utcDate: string;
   home: string;
   away: string;
   group: string;
@@ -32,6 +33,7 @@ export interface Fixture {
 
 export interface Result {
   time: string;
+  utcDate: string;
   home: string;
   away: string;
   homeScore: number;
