@@ -9,7 +9,7 @@ import FixturesTab from "./FixturesTab";
 type Tab = "videos" | "standings" | "fixtures";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: "videos",    label: "ITV Highlights", icon: "▶" },
+  { id: "videos",    label: "Highlights", icon: "▶" },
   { id: "standings", label: "Standings",       icon: "⊞" },
   { id: "fixtures",  label: "Fixtures",        icon: "⊟" },
 ];
