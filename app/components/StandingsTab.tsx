@@ -6,7 +6,7 @@
 // football-data.org will return matches with stage = "LAST_32", "LAST_16", "QUARTER_FINALS" etc.
 // Build a bracket component that reads those matches and fills in team names + scores as results come in.
 
-mport { GroupStanding } from "@/app/lib/claude";
+import { GroupStanding } from "@/app/lib/claude";
 import { Spinner, ErrorState, EmptyState, SectionLabel } from "./ui";
 
 interface Props {
