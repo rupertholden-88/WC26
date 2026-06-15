@@ -112,7 +112,7 @@ export async function GET() {
     // Sort chronologically by UTC date (handles today/tomorrow correctly)
     fixtures.sort((a: { _utc: string }, b: { _utc: string }) => a._utc.localeCompare(b._utc));
 
-    const clean = fixtures.map(({ _utc, ...rest }: { _utc: string; [key: string]: unknown }) => rest);
+    const clean = fixtures.map(({ _utc: _ignored, ...rest }: { _utc: string; [key: string]: unknown }) => rest);
     return NextResponse.json({ fixtures: clean });
   } catch (e) {
     console.error("[fixtures] error:", e);
