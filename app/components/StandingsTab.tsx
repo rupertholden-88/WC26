@@ -58,7 +58,7 @@ function GroupCard({ g }: { g: GroupStanding }) {
           className="font-[family-name:var(--font-display)] text-[12px] font-bold tracking-[0.15em] uppercase"
           style={{ color: accent }}
         >
-          Group {g.group}
+          {g.group.toUpperCase().startsWith("GROUP") ? g.group : `Group ${g.group}`}
         </span>
       </div>
 
