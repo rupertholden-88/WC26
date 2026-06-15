@@ -75,7 +75,7 @@ export async function GET() {
         awayTeam: { name: string };
         stage: string;
         group: string | null;
-        status: string;
+        matchStatus: string;
       }) => {
         const label = dayLabel(m.utcDate);
         if (!label) return null;
@@ -88,8 +88,8 @@ export async function GET() {
 
         // Normalise status: FINISHED | IN_PLAY | PAUSED | TIMED | SCHEDULED
         const status: "FINISHED" | "LIVE" | "UPCOMING" =
-          m.status === "FINISHED" ? "FINISHED"
-          : m.status === "IN_PLAY" || m.status === "PAUSED" || m.status === "HALFTIME" ? "LIVE"
+          m.matchStatus === "FINISHED" ? "FINISHED"
+          : m.matchStatus === "IN_PLAY" || m.matchStatus === "PAUSED" || m.matchStatus === "HALFTIME" ? "LIVE"
           : "UPCOMING";
 
         return {
