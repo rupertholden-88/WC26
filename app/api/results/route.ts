@@ -58,6 +58,7 @@ export async function GET() {
           ? `Group ${m.group.replace("GROUP_", "")}`
           : m.stage?.replace(/_/g, " ") ?? "";
         return {
+          utcDate: m.utcDate,
           time: toBST(m.utcDate),
           home,
           away,
@@ -68,8 +69,9 @@ export async function GET() {
         };
       })
       .filter(Boolean)
-      .sort((a: { time: string }, b: { time: string }) => b.time.localeCompare(a.time));
-    return NextResponse.json({ results });
+      .sort((a: { utcDate: string }, b: { utcDate: string }) => b.utcDate.localeCompare(a.utcDate));
+    const clean = results.map(({ utcDate: _u, ...rest }: { utcDate: string; [key: string]: unknown }) => rest);
+    return NextResponse.json({ results: clean });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
