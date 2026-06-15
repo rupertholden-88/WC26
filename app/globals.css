@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --color-pitch:        #1a4a2e;
+  --color-pitch-mid:    #2d7a4f;
+  --color-pitch-bright: #3d9e68;
+  --color-navy:         #080e1a;
+  --color-navy-mid:     #0d1624;
+  --color-navy-card:    #111e30;
+  --color-navy-border:  #1a2d45;
+  --color-navy-muted:   #1e3050;
+  --color-amber:        #f5a623;
+  --color-amber-dim:    #c47d10;
+  --color-sky:          #5baee0;
+  --color-slate:        #8aa8c8;
+  --color-slate-dim:    #4a6a8a;
+  --color-white:        #f0f4f8;
+  --font-display:       'Oswald', sans-serif;
+  --font-body:          'Inter', sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: #080e1a;
+  color: #f0f4f8;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #080e1a; }
+::-webkit-scrollbar-thumb { background: #1a2d45; border-radius: 3px; }
+
+@keyframes pitch-slide {
+  from { background-position: 0 0; }
+  to   { background-position: 48px 0; }
+}
+
+.pitch-stripe {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    transparent 22px,
+    rgba(45,122,79,0.12) 22px,
+    rgba(45,122,79,0.12) 24px
+  );
+  animation: pitch-slide 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #111e30 25%, #1a2d45 50%, #111e30 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 4px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.75s linear infinite; }
+
+.tab-active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #f5a623;
+  border-radius: 1px;
+}
+
+@keyframes fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fadein { animation: fadein 0.3s ease both; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+.pulse-dot { animation: pulse-dot 1.5s ease infinite; }
