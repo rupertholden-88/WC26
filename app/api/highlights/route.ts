@@ -13,7 +13,7 @@ export async function GET() {
 
     const params = new URLSearchParams({
       part: "snippet",
-      q: "ITV Sport HIGHLIGHTS World Cup 2026",
+      q: "FIFA World Cup 2026 highlights",
       type: "video",
       order: "date",
       publishedAfter: since,
@@ -28,26 +28,21 @@ export async function GET() {
 
     if (!res.ok) {
       const err = await res.text();
+      console.error("[highlights] YouTube API error:", res.status, err);
       return NextResponse.json({ error: `YouTube API ${res.status}: ${err}` }, { status: 502 });
     }
 
     const data = await res.json();
 
-    // Return raw debug info so we can see what YouTube is actually returning
-    const raw = (data.items ?? []).map((item: {
-      id: { videoId?: string };
-      snippet: { title: string; channelTitle: string; publishedAt: string };
-    }) => ({
-      videoId: item.id.videoId,
-      title: item.snippet.title,
-      channel: item.snippet.channelTitle,
-      publishedAt: item.snippet.publishedAt,
-    }));
+    // Trusted highlight channels
+    const TRUSTED_CHANNELS = ["fifa", "itv sport", "fox sports", "bbc sport"];
 
     const EXCLUDE = [
       "react", "reaction", "preview", "press conference", "interview",
       "podcast", "prediction", "verdict", "pundit", "studio", "debate",
       "talking point", "neville", "keane", "they'll", "disappointed",
+      "live stream", "streaming", "video game", "simulation", "pes", "fifa 2",
+      "wakawaka", "#", "tickets", "visa",
     ];
 
     const videos = (data.items ?? [])
@@ -55,31 +50,43 @@ export async function GET() {
         if (!item.id.videoId) return false;
         const title = item.snippet.title.toLowerCase();
         const channel = item.snippet.channelTitle.toLowerCase();
-        if (!channel.includes("itv sport")) return false;
+
+        // Must be from a trusted channel
+        const isTrusted = TRUSTED_CHANNELS.some((c) => channel.includes(c));
+        if (!isTrusted) return false;
+
+        // Must be a match highlights package
         const isHighlight =
           title.includes("highlight") ||
           title.includes("full match") ||
-          title.includes("match in 30") ||
-          title.includes("extended");
+          title.includes("extended highlight");
+
+        // Must reference a match (two teams)
         const hasMatchFormat = title.includes(" v ") || title.includes(" vs ");
+
+        // Exclude punditry/reaction/non-match clips
         const isPunditry = EXCLUDE.some((word) => title.includes(word));
-        return (isHighlight || hasMatchFormat) && !isPunditry;
+
+        return (isHighlight && hasMatchFormat) && !isPunditry;
       })
-      .map((item: { id: { videoId: string }; snippet: { title: string } }) => {
+      .map((item: { id: { videoId: string }; snippet: { title: string; channelTitle: string } }) => {
         const title = item.snippet.title;
         const spoilerFree = title
           .replace(/\b\d+\s*[-–]\s*\d+\b/g, "")
           .replace(/\s{2,}/g, " ")
           .trim();
+
         return {
           match: spoilerFree,
           url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
           videoId: item.id.videoId,
+          channel: item.snippet.channelTitle,
         };
       });
 
-    return NextResponse.json({ videos, debug: { since, totalRaw: raw.length, raw } });
+    return NextResponse.json({ videos });
   } catch (e) {
+    console.error("[highlights] error:", e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
