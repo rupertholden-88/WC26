@@ -1,73 +1,74 @@
 import { NextResponse } from "next/server";
 
-export const maxDuration = 30;
+export const maxDuration = 15;
 
 export async function GET() {
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) {
-    return NextResponse.json({ error: "GEMINI_API_KEY not set" }, { status: 500 });
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json({ error: "YOUTUBE_API_KEY not set" }, { status: 500 });
   }
 
   try {
-    const today = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    const since = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
 
-    const prompt = `Search YouTube right now for FIFA World Cup 2026 match highlight videos uploaded in the last 24 hours.
-
-Return ONLY a JSON array with no markdown, no explanation, just raw JSON like this:
-[
-  {"title": "HIGHLIGHTS - Team A v Team B | FIFA World Cup 2026", "videoId": "xxxxxxxxxxx"},
-  {"title": "Highlights | Team C 2-1 Team D | FIFA World Cup 2026™", "videoId": "yyyyyyyyyyy"}
-]
-
-Today is ${today}. Only include actual match highlight videos (not punditry, reactions, previews, interviews or live streams). Include the real YouTube video ID for each. If you cannot find any, return an empty array [].`;
+    const params = new URLSearchParams({
+      part: "snippet",
+      q: "FIFA World Cup 2026 highlights",
+      type: "video",
+      order: "date",
+      publishedAfter: since,
+      maxResults: "20",
+      key: apiKey,
+    });
 
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          tools: [{ google_search: {} }],
-        }),
-        cache: "no-store",
-      }
+      `https://www.googleapis.com/youtube/v3/search?${params}`,
+      { cache: "no-store" }
     );
 
     if (!res.ok) {
       const err = await res.text();
-      console.error("[highlights] Gemini error:", res.status, err);
-      return NextResponse.json({ error: `Gemini API ${res.status}: ${err}` }, { status: 502 });
+      return NextResponse.json({ error: `YouTube API ${res.status}: ${err}` }, { status: 502 });
     }
 
     const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "[]";
 
-    // Strip any markdown fences
-    const clean = text.replace(/```json|```/g, "").trim();
+    // Channels known to post real match highlights
+    const TRUSTED = ["fifa", "itv sport", "fox sports", "bbc sport"];
 
-    let items: { title: string; videoId: string }[] = [];
-    try {
-      items = JSON.parse(clean);
-    } catch {
-      console.error("[highlights] Failed to parse Gemini response:", clean);
-      return NextResponse.json({ error: "Failed to parse Gemini response", raw: clean }, { status: 500 });
-    }
+    // Words that indicate it's NOT a match highlights video
+    const JUNK = [
+      "reaction", "press conference", "interview", "podcast", "prediction",
+      "verdict", "pundit", "studio", "debate", "talking point", "neville",
+      "keane", "they'll", "disappointed", "live stream", "streaming",
+      "video game", "simulation", "pes", "tickets", "visa", "carry england",
+      "backs japan", "one day", "watch party", "watchalong",
+    ];
 
-    const videos = items
-      .filter((item) => item.videoId && item.title)
-      .map((item) => ({
-        match: item.title
-          .replace(/\b\d+[-–]\d+\b/g, "")
+    const videos = (data.items ?? [])
+      .filter((item: { id: { videoId?: string }; snippet: { title: string; channelTitle: string } }) => {
+        if (!item.id.videoId) return false;
+        const title = item.snippet.title.toLowerCase();
+        const channel = item.snippet.channelTitle.toLowerCase();
+
+        if (!TRUSTED.some((c) => channel.includes(c))) return false;
+        if (JUNK.some((w) => title.includes(w))) return false;
+        if (!title.includes("highlight") && !title.includes("full match") && !title.includes("extended")) return false;
+
+        return true;
+      })
+      .map((item: { id: { videoId: string }; snippet: { title: string; channelTitle: string } }) => ({
+        match: item.snippet.title
+          .replace(/\b\d+\s*[-–]\s*\d+\b/g, "")
           .replace(/\s{2,}/g, " ")
           .trim(),
-        url: `https://www.youtube.com/watch?v=${item.videoId}`,
-        videoId: item.videoId,
+        url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+        videoId: item.id.videoId,
+        channel: item.snippet.channelTitle,
       }));
 
     return NextResponse.json({ videos });
   } catch (e) {
-    console.error("[highlights] error:", e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
