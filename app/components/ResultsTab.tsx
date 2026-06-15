@@ -1,21 +1,24 @@
 "use client";
 
 import { Result } from "@/app/lib/claude";
+import { formatInTz, getTzAbbr } from "@/app/lib/timezone";
 import { Spinner, ErrorState, EmptyState, SectionLabel } from "./ui";
 
 interface Props {
   data: Result[] | null;
   loading: boolean;
   error: string | null;
+  tz: string;
 }
 
-export default function ResultsTab({ data, loading, error }: Props) {
+export default function ResultsTab({ data, loading, error, tz }: Props) {
+  const tzAbbr = getTzAbbr(tz);
   if (loading) return <Spinner />;
   if (error) return <ErrorState message={error} />;
 
   return (
     <div className="fadein">
-      <SectionLabel>Results · last 24 hours</SectionLabel>
+      <SectionLabel>Results · last 24 hours · {tzAbbr}</SectionLabel>
       {!data || data.length === 0 ? (
         <EmptyState message="No results yet — check back after matches finish." />
       ) : (
@@ -82,7 +85,7 @@ export default function ResultsTab({ data, loading, error }: Props) {
                 <p className="text-[10px] text-[#4a6a8a] text-center mt-3 tracking-widest">
                   {isDraw ? "DRAW" : r.homeScore > r.awayScore ? r.home.toUpperCase() + " WIN" : r.away.toUpperCase() + " WIN"}
                   <span className="mx-2 text-[#1a2d45]">·</span>
-                  {r.time} BST
+                  {r.utcDate ? formatInTz(r.utcDate, tz) : r.time} {tzAbbr}
                 </p>
               </div>
             );
