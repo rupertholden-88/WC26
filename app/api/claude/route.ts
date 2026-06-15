@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY not set" }, { status: 500 });
+    return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured in Vercel environment variables" }, { status: 500 });
   }
 
   const messages: Message[] = [{ role: "user", content: prompt }];
@@ -41,13 +41,18 @@ export async function POST(req: NextRequest) {
       });
 
       if (!res.ok) {
-        const err = await res.text();
-        return NextResponse.json({ error: `Anthropic API error: ${err}` }, { status: 502 });
+        const errText = await res.text();
+        console.error(`[WC26] Anthropic API error ${res.status}:`, errText);
+        return NextResponse.json(
+          { error: `Anthropic API returned ${res.status}: ${errText}` },
+          { status: 502 }
+        );
       }
 
       const data = await res.json();
+      console.log(`[WC26] Turn ${i} stop_reason:`, data.stop_reason, "content types:", data.content?.map((b: {type: string}) => b.type));
 
-      const textBlocks = data.content.filter((b: { type: string }) => b.type === "text");
+      const textBlocks = data.content?.filter((b: { type: string }) => b.type === "text") ?? [];
       if (textBlocks.length > 0) {
         finalText = textBlocks.map((b: { text: string }) => b.text).join("\n");
       }
@@ -69,8 +74,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (!finalText) {
+      return NextResponse.json({ error: "No response text from Claude" }, { status: 502 });
+    }
+
     return NextResponse.json({ text: finalText });
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 500 });
+    console.error("[WC26] Caught error:", e);
+    return NextResponse.json({ error: `Server error: ${String(e)}` }, { status: 500 });
   }
 }

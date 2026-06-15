@@ -34,9 +34,8 @@ async function callClaude(prompt: string): Promise<string> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt }),
   });
-  if (!res.ok) throw new Error(`API route error: ${res.status}`);
   const data = await res.json();
-  if (data.error) throw new Error(data.error);
+  if (!res.ok || data.error) throw new Error(data.error ?? `HTTP ${res.status}`);
   return data.text ?? "";
 }
 
