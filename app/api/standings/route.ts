@@ -1,11 +1,28 @@
 import { NextResponse } from "next/server";
-import { getBroadcaster } from "@/app/lib/broadcaster";
 
 export const maxDuration = 30;
 
-// football-data.org: WC = World Cup competition code, free tier
 const FD_BASE = "https://api.football-data.org/v4";
 const WC_CODE = "WC";
+
+// Hardcoded group structure — all 48 teams in their correct groups
+// Used to seed missing teams when the API hasn't populated them yet
+const GROUP_SEEDS: Record<string, string[]> = {
+  A: ["Mexico", "South Korea", "Czechia", "South Africa"],
+  B: ["Switzerland", "Canada", "Qatar", "Bosnia-Herzegovina"],
+  C: ["Scotland", "Morocco", "Brazil", "Haiti"],
+  D: ["United States", "Australia", "Turkey", "Paraguay"],
+  E: ["Germany", "Ivory Coast", "Ecuador", "Curaçao"],
+  F: ["Sweden", "Japan", "Netherlands", "Tunisia"],
+  G: ["Egypt", "Belgium", "Iran", "New Zealand"],
+  H: ["Spain", "Cape Verde Islands", "Saudi Arabia", "Uruguay"],
+  I: ["France", "Iraq", "Norway", "Senegal"],
+  J: ["Algeria", "Argentina", "Jordan", "Austria"],
+  K: ["Congo DR", "Colombia", "Portugal", "Uzbekistan"],
+  L: ["England", "Ghana", "Croatia", "Panama"],
+};
+
+type Team = { name: string; played: number; won: number; drawn: number; lost: number; gd: number; pts: number };
 
 export async function GET() {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
@@ -16,82 +33,71 @@ export async function GET() {
   try {
     const res = await fetch(`${FD_BASE}/competitions/${WC_CODE}/standings`, {
       headers: { "X-Auth-Token": apiKey },
-      next: { revalidate: 300 }, // cache 5 mins
+      next: { revalidate: 300 },
     });
 
     if (!res.ok) {
       const err = await res.text();
-      console.error("[standings] football-data error:", res.status, err);
       return NextResponse.json({ error: `football-data.org ${res.status}: ${err}` }, { status: 502 });
     }
 
     const data = await res.json();
-
-    // Transform to our GroupStanding format
-    // football-data returns standings array with type TOTAL/HOME/AWAY
     const totalStandings = data.standings?.filter((s: { type: string }) => s.type === "TOTAL") ?? [];
 
-    const groups = totalStandings.map((standing: {
-      group: string;
-      table: Array<{
-        position: number;
-        team: { name: string };
-        playedGames: number;
-        won: number;
-        draw: number;
-        lost: number;
-        goalDifference: number;
-        points: number;
-      }>;
-    }) => ({
-      group: (standing.group ?? "?").replace(/^GROUP[_\s]*/i, "").trim(),
-      teams: standing.table.map((row) => ({
-        name: row.team.name,
-        played: row.playedGames,
-        won: row.won,
-        drawn: row.draw,
-        lost: row.lost,
-        gd: row.goalDifference,
-        pts: row.points,
-      })),
-    }));
-
-    // football-data.org has a bug where some Group H teams appear under fake group names
-    // like "Atlantic Division" and "Central Division"
-    type Team = { name: string; played: number; won: number; drawn: number; lost: number; gd: number; pts: number };
-    const letterGroups: Record<string, { group: string; teams: Team[] }> = {};
-    const orphanTeams: Team[] = [];
-
-    for (const g of groups) {
-      if (/^[A-L]$/.test(g.group)) {
-        letterGroups[g.group] = g;
-      } else {
-        orphanTeams.push(...g.teams);
+    // Build a map of team name -> live stats from API
+    const liveTeams: Record<string, Team> = {};
+    for (const standing of totalStandings) {
+      for (const row of standing.table ?? []) {
+        const name = row.team.name as string;
+        liveTeams[name] = {
+          name,
+          played: row.playedGames,
+          won: row.won,
+          drawn: row.draw,
+          lost: row.lost,
+          gd: row.goalDifference,
+          pts: row.points,
+        };
       }
     }
 
-    // Only merge orphans that don't already appear in any valid group
-    if (orphanTeams.length > 0) {
-      const allKnownTeams = new Set(
-        Object.values(letterGroups).flatMap(g => g.teams.map((t: Team) => t.name))
-      );
-      const trulyOrphan = orphanTeams.filter(t => !allKnownTeams.has(t.name));
-      if (trulyOrphan.length > 0) {
-        if (!letterGroups["H"]) letterGroups["H"] = { group: "H", teams: [] };
-        letterGroups["H"].teams.push(...trulyOrphan);
-        letterGroups["H"].teams.sort((a, b) => b.pts - a.pts || b.gd - a.gd);
-      }
-    }
+    // Also try normalised names (Cape Verde Islands vs Cape Verde)
+    const nameAliases: Record<string, string> = {
+      "Cape Verde": "Cape Verde Islands",
+      "Bosnia and Herzegovina": "Bosnia-Herzegovina",
+      "DR Congo": "Congo DR",
+      "Türkiye": "Turkey",
+      "Korea Republic": "South Korea",
+      "USA": "United States",
+      "Ivory Coast": "Ivory Coast",
+      "Côte d'Ivoire": "Ivory Coast",
+    };
 
-    const validGroups = Object.values(letterGroups)
-      .sort((a, b) => a.group.localeCompare(b.group));
+    // Build final groups using seeds, overlaying live data
+    const groups = Object.entries(GROUP_SEEDS).map(([groupLetter, seedTeams]) => {
+      const teams: Team[] = seedTeams.map((seedName) => {
+        // Try exact match first, then alias
+        const liveKey = Object.keys(liveTeams).find(k =>
+          k === seedName ||
+          k === nameAliases[seedName] ||
+          nameAliases[k] === seedName ||
+          k.toLowerCase() === seedName.toLowerCase()
+        );
+        if (liveKey && liveTeams[liveKey]) {
+          return { ...liveTeams[liveKey], name: seedName };
+        }
+        // Not in API yet — return zeroed entry
+        return { name: seedName, played: 0, won: 0, drawn: 0, lost: 0, gd: 0, pts: 0 };
+      });
 
-    return NextResponse.json({ groups: validGroups });
+      // Sort by pts desc, then gd desc
+      teams.sort((a, b) => b.pts - a.pts || b.gd - a.gd);
+
+      return { group: groupLetter, teams };
+    });
+
+    return NextResponse.json({ groups });
   } catch (e) {
-    console.error("[standings] error:", e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
-
-// Suppress unused import warning
-void getBroadcaster;
