@@ -28,21 +28,19 @@ export async function GET() {
 
     if (!res.ok) {
       const err = await res.text();
-      console.error("[highlights] YouTube API error:", res.status, err);
       return NextResponse.json({ error: `YouTube API ${res.status}: ${err}` }, { status: 502 });
     }
 
     const data = await res.json();
 
-    // Trusted highlight channels
     const TRUSTED_CHANNELS = ["fifa", "itv sport", "fox sports", "bbc sport"];
 
     const EXCLUDE = [
-      "react", "reaction", "preview", "press conference", "interview",
-      "podcast", "prediction", "verdict", "pundit", "studio", "debate",
-      "talking point", "neville", "keane", "they'll", "disappointed",
-      "live stream", "streaming", "video game", "simulation", "pes", "fifa 2",
-      "wakawaka", "#", "tickets", "visa",
+      "reaction", "press conference", "interview", "podcast", "prediction",
+      "verdict", "pundit", "studio", "debate", "talking point", "neville",
+      "keane", "they'll", "disappointed", "live stream", "streaming",
+      "video game", "simulation", "pes", "tickets", "visa", "carry england",
+      "backs japan", "one day",
     ];
 
     const videos = (data.items ?? [])
@@ -52,27 +50,23 @@ export async function GET() {
         const channel = item.snippet.channelTitle.toLowerCase();
 
         // Must be from a trusted channel
-        const isTrusted = TRUSTED_CHANNELS.some((c) => channel.includes(c));
-        if (!isTrusted) return false;
+        if (!TRUSTED_CHANNELS.some((c) => channel.includes(c))) return false;
 
-        // Must be a match highlights package
+        // Must be a highlights package
         const isHighlight =
           title.includes("highlight") ||
           title.includes("full match") ||
-          title.includes("extended highlight");
+          title.includes("extended");
 
-        // Must reference a match (two teams)
-        const hasMatchFormat = title.includes(" v ") || title.includes(" vs ");
+        // Exclude punditry
+        if (EXCLUDE.some((w) => title.includes(w))) return false;
 
-        // Exclude punditry/reaction/non-match clips
-        const isPunditry = EXCLUDE.some((word) => title.includes(word));
-
-        return (isHighlight && hasMatchFormat) && !isPunditry;
+        return isHighlight;
       })
       .map((item: { id: { videoId: string }; snippet: { title: string; channelTitle: string } }) => {
         const title = item.snippet.title;
         const spoilerFree = title
-          .replace(/\b\d+\s*[-–]\s*\d+\b/g, "")
+          .replace(/\b\d+[-–]\d+\b/g, "")
           .replace(/\s{2,}/g, " ")
           .trim();
 
@@ -86,7 +80,6 @@ export async function GET() {
 
     return NextResponse.json({ videos });
   } catch (e) {
-    console.error("[highlights] error:", e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
