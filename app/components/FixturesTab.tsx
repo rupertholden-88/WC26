@@ -1,6 +1,7 @@
 "use client";
 
 import { Fixture } from "@/app/lib/claude";
+import { formatInTz, getTzAbbr } from "@/app/lib/timezone";
 import { Spinner, ErrorState, EmptyState, SectionLabel } from "./ui";
 
 const ITV_URL  = "https://www.itv.com/watch";
@@ -10,6 +11,7 @@ interface Props {
   data: Fixture[] | null;
   loading: boolean;
   error: string | null;
+  tz: string;
 }
 
 function ChannelBadge({ channel }: { channel: "ITV" | "BBC" }) {
@@ -43,7 +45,9 @@ function StatusDot({ status }: { status: Fixture["status"] }) {
   return <span className="w-2 h-2 rounded-full bg-[#3d9e68] shrink-0" title="Upcoming" />;
 }
 
-function FixtureRow({ f }: { f: Fixture }) {
+function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
+  const displayTime = f.utcDate ? formatInTz(f.utcDate, tz) : f.time;
+  const tzAbbr = getTzAbbr(tz);
   const href = f.channel === "ITV" ? ITV_URL : BBC_URL;
 
   const stripeColour =
@@ -74,7 +78,7 @@ function FixtureRow({ f }: { f: Fixture }) {
                           ${f.status === "FINISHED" ? "text-red-600 line-through decoration-red-800"
                             : f.status === "LIVE" ? "text-orange-400"
                             : "text-[#4a6a8a]"}`}>
-          {f.time}
+          {displayTime}
         </span>
       </div>
 
@@ -115,13 +119,14 @@ function DaySection({ label, fixtures }: { label: string; fixtures: Fixture[] })
         </span>
       </div>
       <div className="flex flex-col gap-2">
-        {fixtures.map((f, i) => <FixtureRow key={i} f={f} />)}
+        {fixtures.map((f, i) => <FixtureRow key={i} f={f} tz={tz} />)}
       </div>
     </div>
   );
 }
 
-export default function FixturesTab({ data, loading, error }: Props) {
+export default function FixturesTab({ data, loading, error, tz }: Props) {
+  const tzAbbr = getTzAbbr(tz);
   const now = new Date();
   const todayStr = now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).toUpperCase();
   const tom = new Date(now);
@@ -137,7 +142,7 @@ export default function FixturesTab({ data, loading, error }: Props) {
 
   return (
     <div className="fadein">
-      <SectionLabel>Fixtures · BBC &amp; ITV</SectionLabel>
+      <SectionLabel>Fixtures · BBC &amp; ITV · {tzAbbr}</SectionLabel>
       <DaySection label={`Today · ${todayStr}`} fixtures={todayFixtures} />
       <DaySection label={`Tomorrow · ${tomStr}`} fixtures={tomorrowFixtures} />
     </div>
