@@ -30,7 +30,7 @@ export async function GET() {
       `${FD_BASE}/competitions/${WC_CODE}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=FINISHED`,
       {
         headers: { "X-Auth-Token": apiKey },
-        next: { revalidate: 60 },
+        cache: "no-store",
       }
     );
 
@@ -55,7 +55,7 @@ export async function GET() {
         const home = m.homeTeam.shortName ?? m.homeTeam.name;
         const away = m.awayTeam.shortName ?? m.awayTeam.name;
         const group = m.group
-          ? `Group ${m.group.replace("GROUP_", "")}`
+          ? `Group ${m.group.replace(/^GROUP[_\s]*/i, "").trim()}`
           : m.stage?.replace(/_/g, " ") ?? "";
         return {
           utcDate: m.utcDate,
