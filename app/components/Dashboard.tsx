@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { VideoResult, GroupStanding, Fixture, Result, fetchVideos, fetchStandings, fetchFixtures, fetchResults } from "@/app/lib/claude";
+import { getStoredTz, DEFAULT_TZ } from "@/app/lib/timezone";
+import TzSelector from "./TzSelector";
 import VideosTab from "./VideosTab";
 import StandingsTab from "./StandingsTab";
 import FixturesTab from "./FixturesTab";
@@ -29,6 +31,9 @@ function initial<T>(): DataState<T> {
 export default function Dashboard() {
   const [tab, setTab] = useState<Tab>("videos");
   const [refreshing, setRefreshing] = useState(false);
+  const [tz, setTz] = useState<string>(DEFAULT_TZ);
+
+  useEffect(() => { setTz(getStoredTz()); }, []);
 
   const [videos,   setVideos]   = useState<DataState<VideoResult[]>>(initial());
   const [standing, setStanding] = useState<DataState<GroupStanding[]>>(initial());
@@ -124,6 +129,7 @@ export default function Dashboard() {
           </svg>
           Refresh
         </button>
+        <TzSelector value={tz} onChange={setTz} />
         </div>
       </div>
 
@@ -131,8 +137,8 @@ export default function Dashboard() {
       <div className="py-6">
         {tab === "videos"    && <VideosTab   data={videos.data}   loading={videos.loading}   error={videos.error} />}
         {tab === "standings" && <StandingsTab data={standing.data} loading={standing.loading} error={standing.error} />}
-        {tab === "results"   && <ResultsTab   data={results.data}  loading={results.loading}  error={results.error}  />}
-        {tab === "fixtures"  && <FixturesTab  data={fixtures.data} loading={fixtures.loading} error={fixtures.error} />}
+        {tab === "results"   && <ResultsTab   data={results.data}  loading={results.loading}  error={results.error}  tz={tz} />}
+        {tab === "fixtures"  && <FixturesTab  data={fixtures.data} loading={fixtures.loading} error={fixtures.error} tz={tz} />}
       </div>
     </div>
   );
