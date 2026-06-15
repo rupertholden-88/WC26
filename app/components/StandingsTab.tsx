@@ -1,4 +1,4 @@
-"use client";
+"use client"; // v2
 
 // TODO (c. 25 June 2026): Group stage ends ~28 June.
 // Replace this StandingsTab with a knockout bracket view.
