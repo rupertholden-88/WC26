@@ -86,14 +86,15 @@ export default function Dashboard() {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
       {/* Tab bar + Refresh */}
-      <div className="flex items-center justify-between border-b border-[#1a2d45] mt-0">
-        <nav className="flex">
+      <div className="border-b border-[#1a2d45] mt-0">
+        <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
+        <nav className="flex shrink-0">
           {TABS.map(({ id, label, icon }) => (
             <button
               key={id}
               onClick={() => setTab(id)}
               className={`relative font-[family-name:var(--font-display)] text-[12px] sm:text-[13px] font-semibold
-                          tracking-[0.1em] uppercase px-4 sm:px-5 py-4 transition-colors duration-150 cursor-pointer
+                          tracking-[0.1em] uppercase px-3 sm:px-4 py-3 transition-colors duration-150 cursor-pointer whitespace-nowrap
                           ${tab === id
                             ? "text-[#f5a623] tab-active"
                             : "text-[#4a6a8a] hover:text-[#8aa8c8]"
@@ -104,7 +105,6 @@ export default function Dashboard() {
             </button>
           ))}
         </nav>
-
         <button
           onClick={loadAll}
           disabled={refreshing}
@@ -124,6 +124,7 @@ export default function Dashboard() {
           </svg>
           Refresh
         </button>
+        </div>
       </div>
 
       {/* Content */}
