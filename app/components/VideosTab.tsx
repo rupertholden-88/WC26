@@ -21,10 +21,10 @@ export default function VideosTab({ data, loading, error }: Props) {
 
   return (
     <div className="fadein">
-      <SectionLabel>ITV Sport highlights since 6pm {yestStr}</SectionLabel>
+      <SectionLabel>World Cup highlights since 6pm {yestStr}</SectionLabel>
 
       {!data || data.length === 0 ? (
-        <EmptyState message="No highlights found yet — ITV Sport usually uploads within an hour of full time. Check back soon." />
+        <EmptyState message="No highlights found yet — check back after matches finish." />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {data.map((v, i) => (
@@ -53,13 +53,6 @@ export default function VideosTab({ data, loading, error }: Props) {
                     </svg>
                   </div>
                 </div>
-                {/* ITV badge */}
-                <div className="absolute top-2 left-2">
-                  <span className="font-[family-name:var(--font-display)] text-[10px] font-bold tracking-widest
-                                   text-[#f5a623] bg-[#080e1a]/80 border border-[#f5a623]/30 px-2 py-0.5 rounded">
-                    ITV
-                  </span>
-                </div>
               </div>
 
               {/* Match title */}
@@ -68,7 +61,9 @@ export default function VideosTab({ data, loading, error }: Props) {
                                tracking-wide leading-tight line-clamp-2">
                   {v.match}
                 </p>
-                <p className="text-[11px] text-[#4a6a8a] mt-1 font-medium">Highlights · ITV Sport</p>
+                <p className="text-[11px] text-[#4a6a8a] mt-1 font-medium">
+                  Highlights · {(v as VideoResult & { channel?: string }).channel ?? "YouTube"}
+                </p>
               </div>
             </a>
           ))}
