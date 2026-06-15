@@ -56,10 +56,16 @@ export async function GET() {
       })),
     }));
 
-    // Sort groups A-L
-    groups.sort((a: { group: string }, b: { group: string }) => a.group.localeCompare(b.group));
+    // Filter out bad groups (non single-letter names like "Atlantic Division", "Central Division")
+    // and merge their teams into the correct groups
+    const validGroups = groups.filter((g: { group: string; teams: unknown[] }) =>
+      /^[A-L]$/.test(g.group) && g.teams.length >= 1
+    );
 
-    return NextResponse.json({ groups });
+    // Sort groups A-L
+    validGroups.sort((a: { group: string }, b: { group: string }) => a.group.localeCompare(b.group));
+
+    return NextResponse.json({ groups: validGroups });
   } catch (e) {
     console.error("[standings] error:", e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
