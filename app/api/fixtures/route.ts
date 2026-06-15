@@ -99,6 +99,7 @@ export async function GET() {
           _utc: m.utcDate,
           date: label,
           time: toBST(m.utcDate),
+          utcDate: m.utcDate,
           home,
           away,
           group,
