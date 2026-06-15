@@ -86,3 +86,6 @@ body {
   50%       { opacity: 0.3; }
 }
 .pulse-dot { animation: pulse-dot 1.5s ease infinite; }
+
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
