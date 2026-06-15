@@ -22,13 +22,13 @@ export async function GET() {
       type: "video",
       order: "date",
       publishedAfter: since,
-      maxResults: "15",
+      maxResults: "20",
       key: apiKey,
     });
 
     const res = await fetch(
       `https://www.googleapis.com/youtube/v3/search?${params}`,
-      { next: { revalidate: 900 } } // cache 15 mins
+      { next: { revalidate: 900 } }
     );
 
     if (!res.ok) {
@@ -39,31 +39,42 @@ export async function GET() {
 
     const data = await res.json();
 
+    const EXCLUDE = [
+      "react", "reaction", "preview", "press conference", "interview",
+      "podcast", "prediction", "verdict", "pundit", "studio", "debate",
+      "talking point", "neville", "keane", "they'll", "disappointed",
+    ];
+
     const videos = (data.items ?? [])
       .filter((item: { id: { videoId?: string }; snippet: { title: string } }) => {
+        if (!item.id.videoId) return false;
         const title = item.snippet.title.toLowerCase();
-        // Filter to highlights/match videos, skip news/previews
-        return (
-          item.id.videoId &&
-          (title.includes("highlight") ||
-            title.includes("extended") ||
-            title.includes("full match") ||
-            title.includes("goals") ||
-            title.includes(" v ") ||
-            title.includes(" vs "))
-        );
+
+        // Must be a match highlights package
+        const isHighlight =
+          title.includes("highlight") ||
+          title.includes("full match") ||
+          title.includes("match in 30") ||
+          title.includes("extended");
+
+        // Must reference a match (two teams)
+        const hasMatchFormat = title.includes(" v ") || title.includes(" vs ");
+
+        // Exclude punditry/reaction clips
+        const isPunditry = EXCLUDE.some((word) => title.includes(word));
+
+        return (isHighlight || hasMatchFormat) && !isPunditry;
       })
-      .map((item: { id: { videoId: string }; snippet: { title: string; description: string } }) => {
+      .map((item: { id: { videoId: string }; snippet: { title: string } }) => {
         const title = item.snippet.title;
-        // Strip score patterns like "3-1", "2-0" etc from title for spoiler-free display
+        // Strip scorelines for spoiler-free display e.g. "3-1", "2–0"
         const spoilerFree = title
-          .replace(/\b\d+[-–]\d+\b/g, "")   // "3-1" -> ""
+          .replace(/\b\d+\s*[-–]\s*\d+\b/g, "")
           .replace(/\s{2,}/g, " ")
           .trim();
 
         return {
           match: spoilerFree,
-          originalTitle: title,
           url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
           videoId: item.id.videoId,
         };
