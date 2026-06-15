@@ -105,7 +105,7 @@ function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
   );
 }
 
-function DaySection({ label, fixtures }: { label: string; fixtures: Fixture[] }) {
+function DaySection({ label, fixtures, tz }: { label: string; fixtures: Fixture[]; tz: string }) {
   if (fixtures.length === 0) return null;
   return (
     <div className="mb-8">
@@ -143,8 +143,8 @@ export default function FixturesTab({ data, loading, error, tz }: Props) {
   return (
     <div className="fadein">
       <SectionLabel>Fixtures · BBC &amp; ITV · {tzAbbr}</SectionLabel>
-      <DaySection label={`Today · ${todayStr}`} fixtures={todayFixtures} />
-      <DaySection label={`Tomorrow · ${tomStr}`} fixtures={tomorrowFixtures} />
+      <DaySection label={`Today · ${todayStr}`} fixtures={todayFixtures} tz={tz} />
+      <DaySection label={`Tomorrow · ${tomStr}`} fixtures={tomorrowFixtures} tz={tz} />
     </div>
   );
 }
