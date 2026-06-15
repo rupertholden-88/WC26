@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { VideoResult, GroupStanding, Fixture, fetchVideos, fetchStandings, fetchFixtures } from "@/app/lib/claude";
+import { VideoResult, GroupStanding, Fixture, Result, fetchVideos, fetchStandings, fetchFixtures, fetchResults } from "@/app/lib/claude";
 import VideosTab from "./VideosTab";
 import StandingsTab from "./StandingsTab";
 import FixturesTab from "./FixturesTab";
+import ResultsTab from "./ResultsTab";
 
-type Tab = "videos" | "standings" | "fixtures";
+type Tab = "videos" | "results" | "standings" | "fixtures";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "videos",    label: "Highlights", icon: "▶" },
+  { id: "results",    label: "Results",    icon: "⚽" },
   { id: "standings", label: "Standings",       icon: "⊞" },
   { id: "fixtures",  label: "Fixtures",        icon: "⊟" },
 ];
@@ -31,6 +33,7 @@ export default function Dashboard() {
   const [videos,   setVideos]   = useState<DataState<VideoResult[]>>(initial());
   const [standing, setStanding] = useState<DataState<GroupStanding[]>>(initial());
   const [fixtures, setFixtures] = useState<DataState<Fixture[]>>(initial());
+  const [results,  setResults]  = useState<DataState<Result[]>>(initial());
 
   const loadVideos = useCallback(async () => {
     setVideos(s => ({ ...s, loading: true, error: null }));
@@ -52,6 +55,16 @@ export default function Dashboard() {
     }
   }, []);
 
+  const loadResults = useCallback(async () => {
+    setResults(s => ({ ...s, loading: true, error: null }));
+    try {
+      const data = await fetchResults();
+      setResults({ data, loading: false, error: null });
+    } catch (e) {
+      setResults({ data: null, loading: false, error: "Failed to load results" });
+    }
+  }, []);
+
   const loadFixtures = useCallback(async () => {
     setFixtures(s => ({ ...s, loading: true, error: null }));
     try {
@@ -64,9 +77,9 @@ export default function Dashboard() {
 
   const loadAll = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([loadVideos(), loadStandings(), loadFixtures()]);
+    await Promise.all([loadVideos(), loadResults(), loadStandings(), loadFixtures()]);
     setRefreshing(false);
-  }, [loadVideos, loadStandings, loadFixtures]);
+  }, [loadVideos, loadResults, loadStandings, loadFixtures]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
@@ -117,6 +130,7 @@ export default function Dashboard() {
       <div className="py-6">
         {tab === "videos"    && <VideosTab   data={videos.data}   loading={videos.loading}   error={videos.error} />}
         {tab === "standings" && <StandingsTab data={standing.data} loading={standing.loading} error={standing.error} />}
+        {tab === "results"   && <ResultsTab   data={results.data}  loading={results.loading}  error={results.error}  />}
         {tab === "fixtures"  && <FixturesTab  data={fixtures.data} loading={fixtures.loading} error={fixtures.error} />}
       </div>
     </div>
