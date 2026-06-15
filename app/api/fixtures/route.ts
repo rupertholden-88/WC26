@@ -86,10 +86,13 @@ export async function GET() {
           ? `Group ${m.group.replace("GROUP_", "")}`
           : m.stage?.replace(/_/g, " ") ?? "";
 
-        // Normalise status: FINISHED | IN_PLAY | PAUSED | TIMED | SCHEDULED
+        // Derive status from kick-off time (free tier doesn't provide live status)
+        const kickoff = new Date(m.utcDate).getTime();
+        const nowMs = Date.now();
+        const minsElapsed = (nowMs - kickoff) / 60000;
         const status: "FINISHED" | "LIVE" | "UPCOMING" =
-          m.matchStatus === "FINISHED" ? "FINISHED"
-          : m.matchStatus === "IN_PLAY" || m.matchStatus === "PAUSED" || m.matchStatus === "HALFTIME" ? "LIVE"
+          minsElapsed > 110 ? "FINISHED"
+          : minsElapsed > 0  ? "LIVE"
           : "UPCOMING";
 
         return {
