@@ -56,14 +56,33 @@ export async function GET() {
       })),
     }));
 
-    // Filter out bad groups (non single-letter names like "Atlantic Division", "Central Division")
-    // and merge their teams into the correct groups
-    const validGroups = groups.filter((g: { group: string; teams: unknown[] }) =>
-      /^[A-L]$/.test(g.group) && g.teams.length >= 1
-    );
+    // football-data.org has a bug where Group H is split into "Atlantic Division" and "Central Division"
+    // Merge any non-letter groups into Group H
+    const letterGroups: Record<string, { group: string; teams: { name: string; played: number; won: number; drawn: number; lost: number; gd: number; pts: number }[] }> = {};
+    const orphanTeams: { name: string; played: number; won: number; drawn: number; lost: number; gd: number; pts: number }[] = [];
 
-    // Sort groups A-L
-    validGroups.sort((a: { group: string }, b: { group: string }) => a.group.localeCompare(b.group));
+    for (const g of groups) {
+      if (/^[A-L]$/.test(g.group)) {
+        letterGroups[g.group] = g;
+      } else {
+        // Non-standard group name — collect orphan teams to merge into H
+        orphanTeams.push(...g.teams);
+      }
+    }
+
+    // Merge orphans into Group H
+    if (orphanTeams.length > 0) {
+      if (!letterGroups["H"]) letterGroups["H"] = { group: "H", teams: [] };
+      const existing = letterGroups["H"].teams.map((t: { name: string }) => t.name);
+      for (const t of orphanTeams) {
+        if (!existing.includes(t.name)) letterGroups["H"].teams.push(t);
+      }
+      // Sort Group H by points desc, then GD desc
+      letterGroups["H"].teams.sort((a, b) => b.pts - a.pts || b.gd - a.gd);
+    }
+
+    const validGroups = Object.values(letterGroups)
+      .sort((a, b) => a.group.localeCompare(b.group));
 
     return NextResponse.json({ groups: validGroups });
   } catch (e) {
