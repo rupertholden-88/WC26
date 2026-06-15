@@ -56,29 +56,31 @@ export async function GET() {
       })),
     }));
 
-    // football-data.org has a bug where Group H is split into "Atlantic Division" and "Central Division"
-    // Merge any non-letter groups into Group H
-    const letterGroups: Record<string, { group: string; teams: { name: string; played: number; won: number; drawn: number; lost: number; gd: number; pts: number }[] }> = {};
-    const orphanTeams: { name: string; played: number; won: number; drawn: number; lost: number; gd: number; pts: number }[] = [];
+    // football-data.org has a bug where some Group H teams appear under fake group names
+    // like "Atlantic Division" and "Central Division"
+    type Team = { name: string; played: number; won: number; drawn: number; lost: number; gd: number; pts: number };
+    const letterGroups: Record<string, { group: string; teams: Team[] }> = {};
+    const orphanTeams: Team[] = [];
 
     for (const g of groups) {
       if (/^[A-L]$/.test(g.group)) {
         letterGroups[g.group] = g;
       } else {
-        // Non-standard group name — collect orphan teams to merge into H
         orphanTeams.push(...g.teams);
       }
     }
 
-    // Merge orphans into Group H
+    // Only merge orphans that don't already appear in any valid group
     if (orphanTeams.length > 0) {
-      if (!letterGroups["H"]) letterGroups["H"] = { group: "H", teams: [] };
-      const existing = letterGroups["H"].teams.map((t: { name: string }) => t.name);
-      for (const t of orphanTeams) {
-        if (!existing.includes(t.name)) letterGroups["H"].teams.push(t);
+      const allKnownTeams = new Set(
+        Object.values(letterGroups).flatMap(g => g.teams.map((t: Team) => t.name))
+      );
+      const trulyOrphan = orphanTeams.filter(t => !allKnownTeams.has(t.name));
+      if (trulyOrphan.length > 0) {
+        if (!letterGroups["H"]) letterGroups["H"] = { group: "H", teams: [] };
+        letterGroups["H"].teams.push(...trulyOrphan);
+        letterGroups["H"].teams.sort((a, b) => b.pts - a.pts || b.gd - a.gd);
       }
-      // Sort Group H by points desc, then GD desc
-      letterGroups["H"].teams.sort((a, b) => b.pts - a.pts || b.gd - a.gd);
     }
 
     const validGroups = Object.values(letterGroups)
