@@ -2,9 +2,6 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 15;
 
-// ITV Sport YouTube channel ID (verified from @ITVSport page)
-const ITV_CHANNEL_ID = "UCwvDP_9vI7SZe-5lDFM7M3w"; // ITV Sport LIVE channel (uploads WC highlights)
-
 export async function GET() {
   const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) {
@@ -15,10 +12,11 @@ export async function GET() {
     // Search last 36 hours to catch late-night uploads
     const since = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
 
+    // Search by keyword across YouTube — more robust than channel ID
+    // ITV Sport LIVE uploads with "HIGHLIGHTS" in title and "FIFA" or "World Cup"
     const params = new URLSearchParams({
       part: "snippet",
-      channelId: ITV_CHANNEL_ID,
-      q: "World Cup highlights",
+      q: "ITV Sport HIGHLIGHTS World Cup 2026",
       type: "video",
       order: "date",
       publishedAfter: since,
@@ -46,9 +44,13 @@ export async function GET() {
     ];
 
     const videos = (data.items ?? [])
-      .filter((item: { id: { videoId?: string }; snippet: { title: string } }) => {
+      .filter((item: { id: { videoId?: string }; snippet: { title: string; channelTitle: string } }) => {
         if (!item.id.videoId) return false;
         const title = item.snippet.title.toLowerCase();
+        const channel = item.snippet.channelTitle.toLowerCase();
+
+        // Must be from ITV Sport
+        if (!channel.includes("itv sport")) return false;
 
         // Must be a match highlights package
         const isHighlight =
