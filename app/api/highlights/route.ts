@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export const maxDuration = 15;
 
 // ITV Sport YouTube channel ID (verified from @ITVSport page)
-const ITV_CHANNEL_ID = "UCBzDz6beXDfMtfxQdEutD_w";
+const ITV_CHANNEL_ID = "UCwvDP_9vI7SZe-5lDFM7M3w"; // ITV Sport LIVE channel (uploads WC highlights)
 
 export async function GET() {
   const apiKey = process.env.YOUTUBE_API_KEY;
