@@ -33,37 +33,64 @@ function ChannelBadge({ channel }: { channel: "ITV" | "BBC" }) {
   );
 }
 
+function StatusDot({ status }: { status: Fixture["status"] }) {
+  if (status === "FINISHED") {
+    return <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" title="Finished" />;
+  }
+  if (status === "LIVE") {
+    return <span className="pulse-dot w-2 h-2 rounded-full bg-orange-400 shrink-0" title="Live now" />;
+  }
+  return <span className="w-2 h-2 rounded-full bg-[#3d9e68] shrink-0" title="Upcoming" />;
+}
+
 function FixtureRow({ f }: { f: Fixture }) {
   const href = f.channel === "ITV" ? ITV_URL : BBC_URL;
+
+  const stripeColour =
+    f.status === "FINISHED" ? "bg-gradient-to-b from-red-600 via-red-900 to-transparent"
+    : f.status === "LIVE"   ? "bg-gradient-to-b from-orange-400 via-orange-700 to-transparent"
+    :                         "bg-gradient-to-b from-[#3d9e68] via-[#2d7a4f] to-transparent";
+
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="card-glow flex items-center gap-3 sm:gap-4 bg-[#111e30] border border-[#1a2d45] rounded-xl
-                 px-4 py-3.5 transition-all duration-200 no-underline group relative overflow-hidden"
+      className={`card-glow flex items-center gap-3 sm:gap-4 border rounded-xl
+                 px-4 py-3.5 transition-all duration-200 no-underline group relative overflow-hidden
+                 ${f.status === "FINISHED"
+                   ? "bg-[#0e1520] border-[#1a2030]"
+                   : f.status === "LIVE"
+                   ? "bg-[#131a20] border-[#2a3520]"
+                   : "bg-[#111e30] border-[#1a2d45]"}`}
     >
-      {/* Left accent */}
-      <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl
-                       ${f.channel === "ITV"
-                         ? "bg-gradient-to-b from-[#f5a623] via-[#c47d10] to-transparent"
-                         : "bg-gradient-to-b from-[#5baee0] via-[#1a6bcc] to-transparent"}`} />
+      {/* Left accent stripe — status colour */}
+      <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${stripeColour}`} />
 
-      {/* Time */}
-      <div className="shrink-0 w-[52px] pl-2">
-        <span className="font-[family-name:var(--font-display)] text-[13px] font-medium text-[#4a6a8a] tabular-nums">
+      {/* Status dot + Time */}
+      <div className="shrink-0 w-[60px] pl-2 flex items-center gap-2">
+        <StatusDot status={f.status} />
+        <span className={`font-[family-name:var(--font-display)] text-[13px] font-medium tabular-nums
+                          ${f.status === "FINISHED" ? "text-red-600 line-through decoration-red-800"
+                            : f.status === "LIVE" ? "text-orange-400"
+                            : "text-[#4a6a8a]"}`}>
           {f.time}
         </span>
       </div>
 
       {/* Teams */}
       <div className="flex-1 min-w-0">
-        <p className="font-[family-name:var(--font-display)] text-[16px] sm:text-[17px] font-semibold text-white tracking-wide leading-tight">
+        <p className={`font-[family-name:var(--font-display)] text-[16px] sm:text-[17px] font-semibold tracking-wide leading-tight
+                       ${f.status === "FINISHED" ? "text-[#4a6a8a]" : "text-white"}`}>
           {f.home}
           <span className="text-[#2a4060] font-medium text-[14px] mx-2">v</span>
           {f.away}
         </p>
-        <p className="text-[11px] text-[#4a6a8a] mt-0.5 font-medium">{f.group}</p>
+        <p className="text-[11px] text-[#4a6a8a] mt-0.5 font-medium">
+          {f.group}
+          {f.status === "LIVE" && <span className="ml-2 text-orange-400 font-semibold tracking-widest uppercase text-[9px]">● Live</span>}
+          {f.status === "FINISHED" && <span className="ml-2 text-red-600 font-semibold tracking-widest uppercase text-[9px]">FT</span>}
+        </p>
       </div>
 
       {/* Channel badge */}
