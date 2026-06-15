@@ -85,6 +85,7 @@ export async function GET() {
           : m.stage?.replace(/_/g, " ") ?? "";
 
         return {
+          _utc: m.utcDate,
           date: label,
           time: toBST(m.utcDate),
           home,
@@ -95,10 +96,11 @@ export async function GET() {
       })
       .filter(Boolean);
 
-    // Sort by time
-    fixtures.sort((a: { time: string }, b: { time: string }) => a.time.localeCompare(b.time));
+    // Sort chronologically by UTC date (handles today/tomorrow correctly)
+    fixtures.sort((a: { _utc: string }, b: { _utc: string }) => a._utc.localeCompare(b._utc));
 
-    return NextResponse.json({ fixtures });
+    const clean = fixtures.map(({ _utc, ...rest }: { _utc: string; [key: string]: unknown }) => rest);
+    return NextResponse.json({ fixtures: clean });
   } catch (e) {
     console.error("[fixtures] error:", e);
     return NextResponse.json({ error: String(e) }, { status: 500 });
