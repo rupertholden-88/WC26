@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 15;
 
+const ITV_CHANNEL_ID = "UCBzDz6beXDfMtfxQdEutD_w";
+
 export async function GET() {
   const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) {
@@ -9,15 +11,15 @@ export async function GET() {
   }
 
   try {
-    const since = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+    const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
     const params = new URLSearchParams({
       part: "snippet",
-      q: "FIFA World Cup 2026 highlights",
+      channelId: ITV_CHANNEL_ID,
       type: "video",
       order: "date",
       publishedAfter: since,
-      maxResults: "20",
+      maxResults: "50",
       key: apiKey,
     });
 
@@ -33,54 +35,16 @@ export async function GET() {
 
     const data = await res.json();
 
-    const JUNK = [
-      "reaction", "press conference", "interview", "podcast", "prediction",
-      "verdict", "pundit", "studio", "debate", "talking point", "neville",
-      "keane", "they'll", "disappointed", "live stream", "streaming",
-      "video game", "simulation", "pes", "tickets", "visa", "watch party",
-      "watchalong", "#shorts", "short video", "edits", "wakawaka",
-    ];
+    const raw = (data.items ?? []).map((item: { id: { videoId?: string; kind: string }; snippet: { title: string; channelId: string; channelTitle: string; publishedAt: string } }) => ({
+      videoId: item.id.videoId,
+      kind: item.id.kind,
+      title: item.snippet.title,
+      channelId: item.snippet.channelId,
+      channelTitle: item.snippet.channelTitle,
+      publishedAt: item.snippet.publishedAt,
+    }));
 
-    // Must contain "Team A v/vs Team B" or "Team A X-Y Team B" pattern
-    const hasTeamVsTeam = (title: string) => {
-      const t = title.toLowerCase();
-      return t.includes(" v ") || t.includes(" vs ") || t.includes(" vs. ");
-    };
-
-    // Must be a proper highlight — not a random clip
-    const isHighlight = (title: string) => {
-      const t = title.toLowerCase();
-      return t.includes("highlight") || t.includes("full match") || t.includes("extended");
-    };
-
-    // Title must look clean — no emoji spam, no hashtag spam
-    const looksClean = (title: string) => {
-      const emojiCount = (title.match(/\p{Emoji}/gu) ?? []).length;
-      const hashtagCount = (title.match(/#/g) ?? []).length;
-      return emojiCount <= 2 && hashtagCount <= 1;
-    };
-
-    const videos = (data.items ?? [])
-      .filter((item: { id: { videoId?: string }; snippet: { title: string } }) => {
-        if (!item.id.videoId) return false;
-        const title = item.snippet.title;
-        if (JUNK.some((w) => title.toLowerCase().includes(w))) return false;
-        if (!isHighlight(title)) return false;
-        if (!hasTeamVsTeam(title)) return false;
-        if (!looksClean(title)) return false;
-        return true;
-      })
-      .map((item: { id: { videoId: string }; snippet: { title: string; channelTitle: string } }) => ({
-        match: item.snippet.title
-          .replace(/\b\d+\s*[-–]\s*\d+\b/g, "")
-          .replace(/\s{2,}/g, " ")
-          .trim(),
-        url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-        videoId: item.id.videoId,
-        channel: item.snippet.channelTitle,
-      }));
-
-    return NextResponse.json({ videos });
+    return NextResponse.json({ videos: [], debug: { since, total: raw.length, raw } });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
