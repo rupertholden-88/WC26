@@ -3,7 +3,7 @@
 import { Fixture } from "@/app/lib/claude";
 import { Spinner, ErrorState, EmptyState, SectionLabel } from "./ui";
 
-const ITV_URL  = "https://www.itv.com/watch/fifa-world-cup-2026";
+const ITV_URL  = "https://www.itv.com/watch";
 const BBC_URL  = "https://www.bbc.co.uk/iplayer/event/fifa-world-cup";
 
 interface Props {
