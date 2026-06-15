@@ -70,8 +70,7 @@ export async function GET() {
       })
       .filter(Boolean)
       .sort((a: { utcDate: string }, b: { utcDate: string }) => b.utcDate.localeCompare(a.utcDate));
-    const clean = results.map(({ utcDate: _u, ...rest }: { utcDate: string; [key: string]: unknown }) => rest);
-    return NextResponse.json({ results: clean });
+    return NextResponse.json({ results });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
