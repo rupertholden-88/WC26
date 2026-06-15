@@ -93,5 +93,9 @@ function normalise(name: string): string {
     .replace(/türkiye/g, "turkey")
     .replace(/côte d['']ivoire/gi, "ivory coast")
     .replace(/czechia/gi, "czech republic")
+    .replace(/cape verde islands/gi, "cape verde")
+    .replace(/bosnia and herzegovina/gi, "bosnia-herzegovina")
+    .replace(/democratic republic of congo/gi, "dr congo")
+    .replace(/republic of ireland/gi, "ireland")
     .trim();
 }
