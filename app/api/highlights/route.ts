@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 export const maxDuration = 15;
 
-// ITV Sport YouTube channel ID
-const ITV_CHANNEL_ID = "UCOgMjN3GvKRSPvkMaRFKFEA";
+// ITV Sport YouTube channel ID (verified from @ITVSport page)
+const ITV_CHANNEL_ID = "UCBzDz6beXDfMtfxQdEutD_w";
 
 export async function GET() {
   const apiKey = process.env.YOUTUBE_API_KEY;
@@ -12,17 +12,17 @@ export async function GET() {
   }
 
   try {
-    // Search ITV Sport channel for WC2026 highlights uploaded in last 24 hours
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    // Search last 36 hours to catch late-night uploads
+    const since = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
 
     const params = new URLSearchParams({
       part: "snippet",
       channelId: ITV_CHANNEL_ID,
-      q: "World Cup 2026 highlights",
+      q: "World Cup highlights",
       type: "video",
       order: "date",
       publishedAfter: since,
-      maxResults: "10",
+      maxResults: "15",
       key: apiKey,
     });
 
