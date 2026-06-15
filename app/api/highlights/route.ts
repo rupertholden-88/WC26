@@ -38,15 +38,36 @@ export async function GET() {
       "verdict", "pundit", "studio", "debate", "talking point", "neville",
       "keane", "they'll", "disappointed", "live stream", "streaming",
       "video game", "simulation", "pes", "tickets", "visa", "watch party",
-      "watchalong", "#shorts", "short video", "edits",
+      "watchalong", "#shorts", "short video", "edits", "wakawaka",
     ];
+
+    // Must contain "Team A v/vs Team B" or "Team A X-Y Team B" pattern
+    const hasTeamVsTeam = (title: string) => {
+      const t = title.toLowerCase();
+      return t.includes(" v ") || t.includes(" vs ") || t.includes(" vs. ");
+    };
+
+    // Must be a proper highlight — not a random clip
+    const isHighlight = (title: string) => {
+      const t = title.toLowerCase();
+      return t.includes("highlight") || t.includes("full match") || t.includes("extended");
+    };
+
+    // Title must look clean — no emoji spam, no hashtag spam
+    const looksClean = (title: string) => {
+      const emojiCount = (title.match(/\p{Emoji}/gu) ?? []).length;
+      const hashtagCount = (title.match(/#/g) ?? []).length;
+      return emojiCount <= 2 && hashtagCount <= 1;
+    };
 
     const videos = (data.items ?? [])
       .filter((item: { id: { videoId?: string }; snippet: { title: string } }) => {
         if (!item.id.videoId) return false;
-        const title = item.snippet.title.toLowerCase();
-        if (JUNK.some((w) => title.includes(w))) return false;
-        if (!title.includes("highlight") && !title.includes("full match") && !title.includes("extended")) return false;
+        const title = item.snippet.title;
+        if (JUNK.some((w) => title.toLowerCase().includes(w))) return false;
+        if (!isHighlight(title)) return false;
+        if (!hasTeamVsTeam(title)) return false;
+        if (!looksClean(title)) return false;
         return true;
       })
       .map((item: { id: { videoId: string }; snippet: { title: string; channelTitle: string } }) => ({
