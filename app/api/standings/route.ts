@@ -44,7 +44,7 @@ export async function GET() {
         points: number;
       }>;
     }) => ({
-      group: (standing.group ?? "?").replace(/^GROUP[_ ]/i, ""),
+      group: (standing.group ?? "?").replace(/^GROUP[_\s]*/i, "").trim(),
       teams: standing.table.map((row) => ({
         name: row.team.name,
         played: row.playedGames,
