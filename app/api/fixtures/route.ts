@@ -70,10 +70,12 @@ export async function GET() {
     const fixtures = (data.matches ?? [])
       .map((m: {
         utcDate: string;
+        status: string;
         homeTeam: { name: string };
         awayTeam: { name: string };
         stage: string;
         group: string | null;
+        status: string;
       }) => {
         const label = dayLabel(m.utcDate);
         if (!label) return null;
@@ -84,6 +86,12 @@ export async function GET() {
           ? `Group ${m.group.replace("GROUP_", "")}`
           : m.stage?.replace(/_/g, " ") ?? "";
 
+        // Normalise status: FINISHED | IN_PLAY | PAUSED | TIMED | SCHEDULED
+        const status: "FINISHED" | "LIVE" | "UPCOMING" =
+          m.status === "FINISHED" ? "FINISHED"
+          : m.status === "IN_PLAY" || m.status === "PAUSED" || m.status === "HALFTIME" ? "LIVE"
+          : "UPCOMING";
+
         return {
           _utc: m.utcDate,
           date: label,
@@ -91,6 +99,7 @@ export async function GET() {
           home,
           away,
           group,
+          status,
           channel: getBroadcaster(home, away),
         };
       })
