@@ -232,6 +232,17 @@ body {
   color: #ffffff;
 }
 
+/* ─── Swipe hint toast ─── */
+@keyframes swipe-hint-fade {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.swipe-hint {
+  animation: swipe-hint-fade 3s ease forwards;
+}
+
 /* ─── Grass texture on fixtures/results ─── */
 .grass-divider {
   height: 1px;

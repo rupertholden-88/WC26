@@ -41,8 +41,20 @@ export default function Dashboard() {
   const [tab, setTab] = useState<Tab>("videos");
   const [tz, setTz] = useState<string>(DEFAULT_TZ);
   const [pullDistance, setPullDistance] = useState(0);
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
 
   useEffect(() => { setTz(getStoredTz()); }, []);
+
+  useEffect(() => {
+    if (!localStorage.getItem("swipeHintSeen")) {
+      setShowSwipeHint(true);
+      const t = setTimeout(() => {
+        setShowSwipeHint(false);
+        localStorage.setItem("swipeHintSeen", "1");
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   // Sync tab from URL on mount and on browser back/forward
   useEffect(() => {
@@ -189,6 +201,15 @@ export default function Dashboard() {
           ))}
         </nav>
       </div>
+
+      {/* Swipe hint */}
+      {showSwipeHint && (
+        <div className="swipe-hint flex justify-center items-center gap-2 pt-3 pb-1 text-[var(--text-dim)] text-[11px] tracking-widest uppercase pointer-events-none select-none">
+          <span>←</span>
+          <span>swipe to change screens</span>
+          <span>→</span>
+        </div>
+      )}
 
       {/* Content */}
       <div className="py-6" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
