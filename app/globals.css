@@ -20,12 +20,67 @@
   --font-body:          'Inter', sans-serif;
 }
 
+/* ─── Semantic theme tokens — dark (default) ─── */
+:root {
+  --bg-page:        #080e1a;
+  --bg-card:        #111e30;
+  --bg-mid:         #0d1624;
+  --bg-muted:       #1e3050;
+  --bg-finished:    #0e1520;
+  --bg-live:        #0d1a12;
+  --border:         #1a2d45;
+  --border-dim:     #1a2030;
+  --border-live:    #1e3020;
+  --text-primary:   #f0f4f8;
+  --text-secondary: #8aa8c8;
+  --text-dim:       #4a6a8a;
+  --text-faint:     #2a4060;
+  --accent:         #f5a623;
+  --accent-dim:     #c47d10;
+  --green:          #3d9e68;
+  --green-mid:      #2d7a4f;
+  --green-dark:     #1a4a2e;
+  --bg-qual:        rgba(15, 29, 46, 0.6);
+}
+
+/* ─── Light theme ─── */
+:root[data-theme="light"] {
+  --bg-page:        #f0f4f9;
+  --bg-card:        #ffffff;
+  --bg-mid:         #e8edf5;
+  --bg-muted:       #dce4f0;
+  --bg-finished:    #f3f4f7;
+  --bg-live:        #f0faf5;
+  --border:         #c8d5e8;
+  --border-dim:     #d8e2f0;
+  --border-live:    #a8d8b8;
+  --text-primary:   #0a1628;
+  --text-secondary: #3d5a7a;
+  --text-dim:       #5a7a9a;
+  --text-faint:     #8aa8c8;
+  --accent:         #c97a00;
+  --accent-dim:     #a05e00;
+  --green:          #1a7a47;
+  --green-mid:      #145c35;
+  --green-dark:     #0a3d22;
+  --bg-qual:        rgba(200, 220, 240, 0.4);
+}
+
+/* ─── Smooth theme transition (applied momentarily on toggle) ─── */
+[data-transitioning],
+[data-transitioning] * {
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease !important;
+}
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
 body {
-  background: #080e1a;
-  color: #f0f4f8;
+  background: var(--bg-page);
+  color: var(--text-primary);
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
@@ -33,8 +88,8 @@ body {
 
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #080e1a; }
-::-webkit-scrollbar-thumb { background: #1a2d45; border-radius: 2px; }
+::-webkit-scrollbar-track { background: var(--bg-page); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
@@ -70,7 +125,7 @@ body {
   transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
 .card-glow:hover {
-  box-shadow: 0 0 0 1px rgba(245,166,35,0.25), 0 8px 32px rgba(0,0,0,0.4);
+  box-shadow: 0 0 0 1px rgba(245,166,35,0.25), 0 8px 32px rgba(0,0,0,0.15);
   border-color: rgba(245,166,35,0.4) !important;
 }
 
@@ -79,7 +134,7 @@ body {
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .result-card:hover {
-  box-shadow: 0 0 0 1px rgba(61,158,104,0.3), 0 4px 24px rgba(0,0,0,0.35);
+  box-shadow: 0 0 0 1px rgba(61,158,104,0.3), 0 4px 24px rgba(0,0,0,0.15);
   border-color: rgba(61,158,104,0.4) !important;
 }
 
@@ -89,7 +144,7 @@ body {
   100% { background-position: 600px 0; }
 }
 .shimmer {
-  background: linear-gradient(90deg, #111e30 25%, #1a2d45 50%, #111e30 75%);
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--border) 50%, var(--bg-card) 75%);
   background-size: 600px 100%;
   animation: shimmer 1.4s ease infinite;
   border-radius: 4px;
@@ -107,7 +162,7 @@ body {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #f5a623, transparent);
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
   border-radius: 1px;
 }
 

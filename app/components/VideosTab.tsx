@@ -14,7 +14,7 @@ function VideoCard({ v }: { v: VideoResult & { channel?: string } }) {
   const [playing, setPlaying] = useState(false);
 
   return (
-    <div className="bg-[#111e30] border border-[#1a2d45] rounded-xl overflow-hidden
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden
                     card-glow transition-all duration-200">
       {playing ? (
         /* Embedded YouTube player */
@@ -31,7 +31,7 @@ function VideoCard({ v }: { v: VideoResult & { channel?: string } }) {
         /* Thumbnail — tap to play */
         <button
           onClick={() => setPlaying(true)}
-          className="relative w-full aspect-video bg-[#0d1624] group block cursor-pointer"
+          className="relative w-full aspect-video bg-[var(--bg-mid)] group block cursor-pointer"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -41,7 +41,7 @@ function VideoCard({ v }: { v: VideoResult & { channel?: string } }) {
           />
           {/* Play button */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-14 h-14 rounded-full bg-[#f5a623] flex items-center justify-center
+            <div className="w-14 h-14 rounded-full bg-[var(--accent)] flex items-center justify-center
                             shadow-xl group-hover:scale-110 transition-transform duration-200">
               <svg width="16" height="18" viewBox="0 0 12 14" fill="none">
                 <path d="M1 1L11 7L1 13V1Z" fill="#080e1a" />
@@ -59,11 +59,11 @@ function VideoCard({ v }: { v: VideoResult & { channel?: string } }) {
       {/* Title row */}
       <div className="px-4 py-3 flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-white
+          <p className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-[var(--text-primary)]
                          tracking-wide leading-tight line-clamp-2">
             {v.match}
           </p>
-          <p className="text-[11px] text-[#4a6a8a] mt-1 font-medium">
+          <p className="text-[11px] text-[var(--text-dim)] mt-1 font-medium">
             Highlights · {v.channel ?? "ITV Sport"}
           </p>
         </div>
@@ -73,7 +73,7 @@ function VideoCard({ v }: { v: VideoResult & { channel?: string } }) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="shrink-0 text-[#4a6a8a] hover:text-[#f5a623] transition-colors mt-0.5"
+          className="shrink-0 text-[var(--text-dim)] hover:text-[var(--accent)] transition-colors mt-0.5"
           title="Open in YouTube"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

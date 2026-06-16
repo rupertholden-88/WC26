@@ -162,7 +162,7 @@ export default function Dashboard() {
         style={{ height: pullDistance * 0.6 }}
       >
         <svg
-          className={`w-4 h-4 text-[#f5a623] mb-1 ${pullProgress >= 1 ? "spin" : ""}`}
+          className={`w-4 h-4 text-[var(--accent)] mb-1 ${pullProgress >= 1 ? "spin" : ""}`}
           style={{ opacity: pullProgress, transform: `rotate(${pullProgress * 180}deg)` }}
           viewBox="0 0 16 16" fill="none"
         >
@@ -174,7 +174,7 @@ export default function Dashboard() {
       </div>
 
       {/* Tab bar + Refresh */}
-      <div className="border-b border-[#1a2d45] mt-0">
+      <div className="border-b border-[var(--border)] mt-0">
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
         <nav className="flex shrink-0">
           {TABS.map(({ id, label, icon }) => (
@@ -184,8 +184,8 @@ export default function Dashboard() {
               className={`relative font-[family-name:var(--font-display)] text-[12px] sm:text-[13px] font-semibold
                           tracking-[0.1em] uppercase px-3 sm:px-4 py-3 transition-colors duration-150 cursor-pointer whitespace-nowrap
                           ${tab === id
-                            ? "text-[#f5a623] tab-active"
-                            : "text-[#4a6a8a] hover:text-[#8aa8c8]"
+                            ? "text-[var(--accent)] tab-active"
+                            : "text-[var(--text-dim)] hover:text-[var(--text-secondary)]"
                           }`}
             >
               <span className="hidden sm:inline mr-1.5 opacity-60">{icon}</span>
@@ -197,8 +197,8 @@ export default function Dashboard() {
           onClick={loadAll}
           disabled={refreshing}
           className="flex items-center gap-2 font-[family-name:var(--font-display)] text-[11px] font-semibold
-                     tracking-[0.12em] uppercase text-[#4a6a8a] hover:text-[#f5a623] bg-[#111e30]
-                     border border-[#1a2d45] hover:border-[#f5a623]/30 rounded-lg px-3 py-2
+                     tracking-[0.12em] uppercase text-[var(--text-dim)] hover:text-[var(--accent)] bg-[var(--bg-card)]
+                     border border-[var(--border)] hover:border-[var(--accent)]/30 rounded-lg px-3 py-2
                      transition-all duration-200 disabled:opacity-50 cursor-pointer"
         >
           <svg

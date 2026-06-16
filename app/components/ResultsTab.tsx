@@ -28,15 +28,16 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
             return (
               <div
                 key={i}
-                className="result-card bg-[#111e30] border border-[#1a2d45] rounded-xl px-4 py-4 relative overflow-hidden"
+                className="result-card bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-4 relative overflow-hidden"
               >
                 {/* Green left accent stripe */}
-                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[#3d9e68] via-[#2d7a4f] to-transparent rounded-l-xl" />
+                <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
+                     style={{ background: "linear-gradient(to bottom, var(--green), var(--green-mid), transparent)" }} />
 
                 {/* Group + channel row */}
                 <div className="flex items-center justify-between mb-3 pl-2">
                   <p className="font-[family-name:var(--font-display)] text-[10px] font-semibold
-                                 tracking-[0.16em] uppercase text-[#4a6a8a]">
+                                 tracking-[0.16em] uppercase text-[var(--text-dim)]">
                     {r.group}
                   </p>
                   <span className={`text-[9px] font-bold tracking-[0.12em] uppercase px-2 py-0.5 rounded
@@ -49,7 +50,7 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                 <div className="flex items-center justify-between gap-3 pl-2">
                   {/* Home */}
                   <span className={`flex-1 text-right font-[family-name:var(--font-display)] text-[16px] font-bold leading-tight
-                                    ${!isDraw && r.homeScore > r.awayScore ? "text-white" : "text-[#6a8aaa]"}`}>
+                                    ${!isDraw && r.homeScore > r.awayScore ? "text-[var(--text-primary)]" : "text-[var(--text-dim)]"}`}>
                     {r.home}
                   </span>
 
@@ -58,33 +59,33 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                     <div className={`w-9 h-9 flex items-center justify-center rounded-l-lg
                                      score-digit text-[20px] font-bold font-[family-name:var(--font-display)]
                                      ${!isDraw && r.homeScore > r.awayScore
-                                       ? "bg-[#f5a623] text-[#080e1a]"
-                                       : "bg-[#0d1624] text-white border border-[#1a2d45]"}`}>
+                                       ? "bg-[var(--accent)] text-[#080e1a]"
+                                       : "bg-[var(--bg-mid)] text-[var(--text-primary)] border border-[var(--border)]"}`}>
                       {r.homeScore}
                     </div>
-                    <div className="w-5 h-9 flex items-center justify-center bg-[#0d1624] border-y border-[#1a2d45]">
-                      <span className="text-[#4a6a8a] text-[11px] font-bold">–</span>
+                    <div className="w-5 h-9 flex items-center justify-center bg-[var(--bg-mid)] border-y border-[var(--border)]">
+                      <span className="text-[var(--text-dim)] text-[11px] font-bold">–</span>
                     </div>
                     <div className={`w-9 h-9 flex items-center justify-center rounded-r-lg
                                      score-digit text-[20px] font-bold font-[family-name:var(--font-display)]
                                      ${!isDraw && r.awayScore > r.homeScore
-                                       ? "bg-[#f5a623] text-[#080e1a]"
-                                       : "bg-[#0d1624] text-white border border-[#1a2d45]"}`}>
+                                       ? "bg-[var(--accent)] text-[#080e1a]"
+                                       : "bg-[var(--bg-mid)] text-[var(--text-primary)] border border-[var(--border)]"}`}>
                       {r.awayScore}
                     </div>
                   </div>
 
                   {/* Away */}
                   <span className={`flex-1 text-left font-[family-name:var(--font-display)] text-[16px] font-bold leading-tight
-                                    ${!isDraw && r.awayScore > r.homeScore ? "text-white" : "text-[#6a8aaa]"}`}>
+                                    ${!isDraw && r.awayScore > r.homeScore ? "text-[var(--text-primary)]" : "text-[var(--text-dim)]"}`}>
                     {r.away}
                   </span>
                 </div>
 
                 {/* KO time */}
-                <p className="text-[10px] text-[#4a6a8a] text-center mt-3 tracking-widest">
+                <p className="text-[10px] text-[var(--text-dim)] text-center mt-3 tracking-widest">
                   {isDraw ? "DRAW" : r.homeScore > r.awayScore ? r.home.toUpperCase() + " WIN" : r.away.toUpperCase() + " WIN"}
-                  <span className="mx-2 text-[#1a2d45]">·</span>
+                  <span className="mx-2 text-[var(--border)]">·</span>
                   {r.utcDate ? formatInTz(r.utcDate, tz) : r.time} {tzAbbr}
                 </p>
               </div>

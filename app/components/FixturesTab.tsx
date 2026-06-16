@@ -24,10 +24,7 @@ function ChannelBadge({ channel }: { channel: "ITV" | "BBC" }) {
       rel="noopener noreferrer"
       className={`font-[family-name:var(--font-display)] text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded
         transition-all duration-150 hover:scale-105
-        ${isITV
-          ? "badge-itv"
-          : "badge-bbc"
-        }`}
+        ${isITV ? "badge-itv" : "badge-bbc"}`}
       onClick={(e) => e.stopPropagation()}
     >
       {isITV ? "ITVX" : "iPlayer"}
@@ -42,18 +39,22 @@ function StatusDot({ status }: { status: Fixture["status"] }) {
   if (status === "LIVE") {
     return <span className="pulse-dot w-2 h-2 rounded-full bg-orange-400 shrink-0" title="Live now" />;
   }
-  return <span className="w-2 h-2 rounded-full bg-[#3d9e68] shrink-0" title="Upcoming" />;
+  return <span className="w-2 h-2 rounded-full bg-[var(--green)] shrink-0" title="Upcoming" />;
 }
 
 function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
   const displayTime = f.utcDate ? formatInTz(f.utcDate, tz) : f.time;
-  const tzAbbr = getTzAbbr(tz);
   const href = f.channel === "ITV" ? ITV_URL : BBC_URL;
 
   const stripeColour =
     f.status === "FINISHED" ? "bg-gradient-to-b from-red-600 via-red-900 to-transparent"
     : f.status === "LIVE"   ? "bg-gradient-to-b from-orange-400 via-orange-700 to-transparent"
-    :                         "bg-gradient-to-b from-[#3d9e68] via-[#2d7a4f] to-transparent";
+    :                         "";
+
+  const cardBg =
+    f.status === "FINISHED" ? "bg-[var(--bg-finished)] border-[var(--border-dim)]"
+    : f.status === "LIVE"   ? "bg-[var(--bg-live)] border-[var(--border-live)]"
+    :                         "bg-[var(--bg-card)] border-[var(--border)]";
 
   return (
     <a
@@ -62,14 +63,13 @@ function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
       rel="noopener noreferrer"
       className={`card-glow flex items-center gap-3 sm:gap-4 border rounded-xl
                  px-4 py-3.5 transition-all duration-200 no-underline group relative overflow-hidden
-                 ${f.status === "FINISHED"
-                   ? "bg-[#0e1520] border-[#1a2030]"
-                   : f.status === "LIVE"
-                   ? "bg-[#131a20] border-[#2a3520]"
-                   : "bg-[#111e30] border-[#1a2d45]"}`}
+                 ${cardBg}`}
     >
       {/* Left accent stripe — status colour */}
-      <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${stripeColour}`} />
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${stripeColour}`}
+        style={!stripeColour ? { background: "linear-gradient(to bottom, var(--green), var(--green-mid), transparent)" } : undefined}
+      />
 
       {/* Status dot + Time */}
       <div className="shrink-0 w-[60px] pl-2 flex items-center gap-2">
@@ -77,7 +77,7 @@ function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
         <span className={`font-[family-name:var(--font-display)] text-[13px] font-medium tabular-nums
                           ${f.status === "FINISHED" ? "text-red-600 line-through decoration-red-800"
                             : f.status === "LIVE" ? "text-orange-400"
-                            : "text-[#4a6a8a]"}`}>
+                            : "text-[var(--text-dim)]"}`}>
           {displayTime}
         </span>
       </div>
@@ -85,12 +85,12 @@ function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
       {/* Teams */}
       <div className="flex-1 min-w-0">
         <p className={`font-[family-name:var(--font-display)] text-[16px] sm:text-[17px] font-semibold tracking-wide leading-tight
-                       ${f.status === "FINISHED" ? "text-[#4a6a8a]" : "text-white"}`}>
+                       ${f.status === "FINISHED" ? "text-[var(--text-dim)]" : "text-[var(--text-primary)]"}`}>
           {f.home}
-          <span className="text-[#2a4060] font-medium text-[14px] mx-2">v</span>
+          <span className="text-[var(--text-faint)] font-medium text-[14px] mx-2">v</span>
           {f.away}
         </p>
-        <p className="text-[11px] text-[#4a6a8a] mt-0.5 font-medium">
+        <p className="text-[11px] text-[var(--text-dim)] mt-0.5 font-medium">
           {f.group}
           {f.status === "LIVE" && <span className="ml-2 text-orange-400 font-semibold tracking-widest uppercase text-[9px]">● Live</span>}
           {f.status === "FINISHED" && <span className="ml-2 text-red-600 font-semibold tracking-widest uppercase text-[9px]">FT</span>}
@@ -110,11 +110,11 @@ function DaySection({ label, fixtures, tz }: { label: string; fixtures: Fixture[
   return (
     <div className="mb-8">
       <div className="flex items-center gap-3 mb-3">
-        <p className="font-[family-name:var(--font-display)] text-[10px] font-semibold tracking-[0.22em] text-[#4a6a8a] uppercase">
+        <p className="font-[family-name:var(--font-display)] text-[10px] font-semibold tracking-[0.22em] text-[var(--text-dim)] uppercase">
           {label}
         </p>
-        <div className="flex-1 h-px bg-gradient-to-r from-[#1a2d45] to-transparent" />
-        <span className="font-[family-name:var(--font-display)] text-[10px] text-[#2a4060] tabular-nums">
+        <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, var(--border), transparent)" }} />
+        <span className="font-[family-name:var(--font-display)] text-[10px] text-[var(--text-faint)] tabular-nums">
           {fixtures.length} match{fixtures.length !== 1 ? "es" : ""}
         </span>
       </div>

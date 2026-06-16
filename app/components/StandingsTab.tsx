@@ -31,21 +31,24 @@ function TeamRow({
   isQual: boolean;
 }) {
   return (
-    <tr className={`border-b border-[#0d1624] last:border-0 ${isQual ? "bg-[#0f1d2e]/60" : ""}`}>
+    <tr
+      className="border-b border-[var(--border-dim)] last:border-0"
+      style={isQual ? { background: "var(--bg-qual)" } : undefined}
+    >
       <td className="pl-3 pr-2 py-2.5 w-5">
-        <span className="font-[family-name:var(--font-display)] text-[11px] text-[#2a4060]">{pos}</span>
+        <span className="font-[family-name:var(--font-display)] text-[11px] text-[var(--text-faint)]">{pos}</span>
       </td>
       <td className="py-2.5 pr-2">
-        <span className={`text-[13px] font-medium ${isQual ? "text-white" : "text-[#8aa8c8]"}`}>
+        <span className={`text-[13px] font-medium ${isQual ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
           {team.name}
         </span>
       </td>
-      <td className="py-2.5 pr-2 text-center text-[12px] text-[#4a6a8a]">{team.played}</td>
-      <td className="py-2.5 pr-2 text-center text-[12px] text-[#4a6a8a]">
+      <td className="py-2.5 pr-2 text-center text-[12px] text-[var(--text-dim)]">{team.played}</td>
+      <td className="py-2.5 pr-2 text-center text-[12px] text-[var(--text-dim)]">
         {team.gd > 0 ? `+${team.gd}` : team.gd}
       </td>
       <td className="py-2.5 pr-3 text-center">
-        <span className="font-[family-name:var(--font-display)] text-[14px] font-bold text-[#f5a623]">
+        <span className="font-[family-name:var(--font-display)] text-[14px] font-bold text-[var(--accent)]">
           {team.pts}
         </span>
       </td>
@@ -56,9 +59,9 @@ function TeamRow({
 function GroupCard({ g }: { g: GroupStanding }) {
   const accent = GROUP_COLORS[g.group] ?? "#f5a623";
   return (
-    <div className="bg-[#111e30] border border-[#1a2d45] rounded-xl overflow-hidden hover:border-[#1e3050] transition-colors duration-200">
+    <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden hover:border-[var(--bg-muted)] transition-colors duration-200">
       {/* Group header */}
-      <div className="flex items-center gap-2 bg-[#0d1624] px-3 py-2.5 border-b border-[#1a2d45]">
+      <div className="flex items-center gap-2 bg-[var(--bg-mid)] px-3 py-2.5 border-b border-[var(--border)]">
         <div className="w-2 h-2 rounded-full" style={{ background: accent }} />
         <span
           className="font-[family-name:var(--font-display)] text-[12px] font-bold tracking-[0.15em] uppercase"
@@ -71,12 +74,12 @@ function GroupCard({ g }: { g: GroupStanding }) {
       {/* Table */}
       <table className="w-full">
         <thead>
-          <tr className="border-b border-[#0d1624]">
+          <tr className="border-b border-[var(--border-dim)]">
             <th className="w-5 pl-3" />
-            <th className="py-1.5 text-left text-[9px] font-semibold tracking-[0.18em] text-[#2a4060] uppercase pr-2">Team</th>
-            <th className="py-1.5 text-center text-[9px] font-semibold tracking-[0.18em] text-[#2a4060] uppercase pr-2">P</th>
-            <th className="py-1.5 text-center text-[9px] font-semibold tracking-[0.18em] text-[#2a4060] uppercase pr-2">GD</th>
-            <th className="py-1.5 text-center text-[9px] font-semibold tracking-[0.18em] text-[#2a4060] uppercase pr-3">Pts</th>
+            <th className="py-1.5 text-left text-[9px] font-semibold tracking-[0.18em] text-[var(--text-faint)] uppercase pr-2">Team</th>
+            <th className="py-1.5 text-center text-[9px] font-semibold tracking-[0.18em] text-[var(--text-faint)] uppercase pr-2">P</th>
+            <th className="py-1.5 text-center text-[9px] font-semibold tracking-[0.18em] text-[var(--text-faint)] uppercase pr-2">GD</th>
+            <th className="py-1.5 text-center text-[9px] font-semibold tracking-[0.18em] text-[var(--text-faint)] uppercase pr-3">Pts</th>
           </tr>
         </thead>
         <tbody>
@@ -101,7 +104,7 @@ export default function StandingsTab({ data, loading, error }: Props) {
   return (
     <div className="fadein">
       <SectionLabel>Group Stage Standings · {today}</SectionLabel>
-      <p className="text-xs text-[#4a6a8a] mb-5">
+      <p className="text-xs text-[var(--text-dim)] mb-5">
         Top 2 per group qualify automatically. 8 best third-place teams also advance.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
