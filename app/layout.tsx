@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "WC2🇺🇸 Dashboard",
+  title: "WC26 Dashboard",
   description: "FIFA World Cup 2026 — ITV/BBC highlights, live standings & fixtures",
   openGraph: {
-    title: "WC2🇺🇸 Dashboard",
+    title: "WC26 Dashboard",
     description: "FIFA World Cup 2026 — ITV/BBC highlights, live standings & fixtures",
   },
 };
