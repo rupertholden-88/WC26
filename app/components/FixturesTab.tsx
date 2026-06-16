@@ -14,42 +14,6 @@ interface Props {
   tz: string;
 }
 
-function ITVXLogo() {
-  return (
-    <svg height="18" viewBox="0 0 54 22" role="img" aria-label="ITVX" className="block">
-      <defs>
-        <linearGradient id="itvx-grad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ff2d78" />
-          <stop offset="30%" stopColor="#ff8a00" />
-          <stop offset="55%" stopColor="#ffd400" />
-          <stop offset="78%" stopColor="#22c55e" />
-          <stop offset="100%" stopColor="#2da8ff" />
-        </linearGradient>
-      </defs>
-      <rect x="0" y="0" width="54" height="22" rx="5" fill="url(#itvx-grad)" />
-      <text x="27" y="16" textAnchor="middle" fontFamily="var(--font-display), sans-serif"
-            fontSize="13" fontWeight="700" letterSpacing="0.5" fill="#ffffff">ITVX</text>
-    </svg>
-  );
-}
-
-function IPlayerLogo() {
-  return (
-    <svg height="18" viewBox="0 0 86 22" role="img" aria-label="BBC iPlayer" className="block">
-      <defs>
-        <linearGradient id="iplayer-grad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ff4e98" />
-          <stop offset="100%" stopColor="#00b9d4" />
-        </linearGradient>
-      </defs>
-      {/* play glyph */}
-      <path d="M3 3 L19 11 L3 19 Z" fill="url(#iplayer-grad)" strokeLinejoin="round" />
-      <text x="24" y="16" fontFamily="var(--font-display), sans-serif"
-            fontSize="13" fontWeight="700" letterSpacing="0.3" fill="currentColor">iPlayer</text>
-    </svg>
-  );
-}
-
 function ChannelBadge({ channel }: { channel: "ITV" | "BBC" }) {
   const isITV = channel === "ITV";
   const href = isITV ? ITV_URL : BBC_URL;
@@ -59,11 +23,15 @@ function ChannelBadge({ channel }: { channel: "ITV" | "BBC" }) {
       target="_blank"
       rel="noopener noreferrer"
       title={isITV ? "Watch on ITVX" : "Watch on BBC iPlayer"}
-      className="shrink-0 inline-flex items-center text-[var(--text-primary)]
-                 transition-transform duration-150 hover:scale-105"
+      className="shrink-0 inline-flex items-center transition-transform duration-150 hover:scale-105"
       onClick={(e) => e.stopPropagation()}
     >
-      {isITV ? <ITVXLogo /> : <IPlayerLogo />}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={isITV ? "/itvx.png" : "/bbc-iplayer.png"}
+        alt={isITV ? "ITVX" : "BBC iPlayer"}
+        className={isITV ? "h-4 w-auto" : "h-3.5 w-auto"}
+      />
     </a>
   );
 }
