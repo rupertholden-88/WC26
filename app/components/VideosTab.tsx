@@ -101,7 +101,7 @@ export default function VideosTab({ data, loading, error }: Props) {
       {!data || data.length === 0 ? (
         <EmptyState message="No highlights found yet — check back after matches finish." />
       ) : (
-        <div className="grid grid-cols-1 landscape:grid-cols-2 gap-4 items-start">
+        <div className="grid grid-cols-1 sm:grid-cols-2 landscape:grid-cols-2 gap-4 items-start">
           {data.map((v, i) => (
             <VideoCard key={i} v={v as VideoResult & { channel?: string }} />
           ))}
