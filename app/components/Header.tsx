@@ -38,7 +38,7 @@ export default function Header() {
             {/* Main title */}
             <h1 className="font-[family-name:var(--font-display)] leading-none">
               <span className="block text-[38px] sm:text-[48px] font-bold tracking-tight text-[var(--text-primary)]">
-                WC2🇺🇸
+                WC2<span className="flag-six">6</span>
               </span>
               <span className="block text-[38px] sm:text-[48px] font-bold tracking-tight
                                text-transparent bg-clip-text"
