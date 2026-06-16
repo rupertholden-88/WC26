@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { VideoResult, GroupStanding, Fixture, Result, fetchVideos, fetchStandings, fetchFixtures, fetchResults } from "@/app/lib/claude";
 import { getStoredTz, DEFAULT_TZ } from "@/app/lib/timezone";
-import TzSelector from "./TzSelector";
 import VideosTab from "./VideosTab";
 import StandingsTab from "./StandingsTab";
 import FixturesTab from "./FixturesTab";
@@ -40,7 +39,6 @@ function tabFromUrl(): Tab {
 
 export default function Dashboard() {
   const [tab, setTab] = useState<Tab>("videos");
-  const [refreshing, setRefreshing] = useState(false);
   const [tz, setTz] = useState<string>(DEFAULT_TZ);
   const [pullDistance, setPullDistance] = useState(0);
 
@@ -107,9 +105,7 @@ export default function Dashboard() {
   }, []);
 
   const loadAll = useCallback(async () => {
-    setRefreshing(true);
     await Promise.all([loadVideos(), loadResults(), loadStandings(), loadFixtures()]);
-    setRefreshing(false);
   }, [loadVideos, loadResults, loadStandings, loadFixtures]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
@@ -173,10 +169,9 @@ export default function Dashboard() {
         </svg>
       </div>
 
-      {/* Tab bar + Refresh */}
+      {/* Tab bar */}
       <div className="border-b border-[var(--border)] mt-0">
-        <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-        <nav className="flex shrink-0">
+        <nav className="flex overflow-x-auto scrollbar-none">
           {TABS.map(({ id, label, icon }) => (
             <button
               key={id}
@@ -193,27 +188,6 @@ export default function Dashboard() {
             </button>
           ))}
         </nav>
-        <button
-          onClick={loadAll}
-          disabled={refreshing}
-          className="flex items-center gap-2 font-[family-name:var(--font-display)] text-[11px] font-semibold
-                     tracking-[0.12em] uppercase text-[var(--text-dim)] hover:text-[var(--accent)] bg-[var(--bg-card)]
-                     border border-[var(--border)] hover:border-[var(--accent)]/30 rounded-lg px-3 py-2
-                     transition-all duration-200 disabled:opacity-50 cursor-pointer"
-        >
-          <svg
-            className={`w-3 h-3 ${refreshing ? "spin" : ""}`}
-            viewBox="0 0 16 16" fill="none"
-          >
-            <path
-              d="M13.5 8A5.5 5.5 0 1 1 8 2.5a5.5 5.5 0 0 1 4.5 2.35M13.5 2.5v3h-3"
-              stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-            />
-          </svg>
-          Refresh
-        </button>
-        <TzSelector value={tz} onChange={setTz} />
-        </div>
       </div>
 
       {/* Content */}
