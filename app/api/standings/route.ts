@@ -22,7 +22,7 @@ const GROUP_SEEDS: Record<string, string[]> = {
   L: ["England", "Ghana", "Croatia", "Panama"],
 };
 
-type Team = { name: string; played: number; won: number; drawn: number; lost: number; gf: number; gd: number; pts: number };
+type Team = { name: string; played: number; won: number; drawn: number; lost: number; gf: number; ga: number; gd: number; pts: number };
 
 export async function GET() {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
@@ -56,6 +56,7 @@ export async function GET() {
           drawn: row.draw,
           lost: row.lost,
           gf: row.goalsFor,
+          ga: row.goalsAgainst,
           gd: row.goalDifference,
           pts: row.points,
         };
@@ -88,7 +89,7 @@ export async function GET() {
           return { ...liveTeams[liveKey], name: seedName };
         }
         // Not in API yet — return zeroed entry
-        return { name: seedName, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, gd: 0, pts: 0 };
+        return { name: seedName, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, gd: 0, pts: 0 };
       });
 
       // Sort by pts desc, then gd desc

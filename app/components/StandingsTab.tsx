@@ -54,6 +54,8 @@ function TeamRow({
         </div>
       </td>
       <td className="py-2.5 pr-2 text-center text-[12px] text-[var(--text-dim)]">{team.played}</td>
+      <td className="py-2.5 pr-2 text-center text-[12px] text-[var(--text-dim)]">{team.gf}</td>
+      <td className="py-2.5 pr-2 text-center text-[12px] text-[var(--text-dim)]">{team.ga}</td>
       <td className="py-2.5 pr-2 text-center text-[12px] text-[var(--text-dim)]">
         {team.gd > 0 ? `+${team.gd}` : team.gd}
       </td>
@@ -106,6 +108,8 @@ function GroupCard({ g, qualThirds }: { g: GroupStanding; qualThirds: Set<string
             <th className="w-5 pl-3" />
             <th className="py-1.5 text-left text-[9px] font-semibold tracking-[0.18em] text-[var(--text-faint)] uppercase pr-2">Team</th>
             <th className="py-1.5 text-center text-[9px] font-semibold tracking-[0.18em] text-[var(--text-faint)] uppercase pr-2">P</th>
+            <th className="py-1.5 text-center text-[9px] font-semibold tracking-[0.18em] text-[var(--text-faint)] uppercase pr-2">GF</th>
+            <th className="py-1.5 text-center text-[9px] font-semibold tracking-[0.18em] text-[var(--text-faint)] uppercase pr-2">GA</th>
             <th className="py-1.5 text-center text-[9px] font-semibold tracking-[0.18em] text-[var(--text-faint)] uppercase pr-2">GD</th>
             <th className="py-1.5 text-center text-[9px] font-semibold tracking-[0.18em] text-[var(--text-faint)] uppercase pr-3">Pts</th>
           </tr>
