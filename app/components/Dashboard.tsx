@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { VideoResult, GroupStanding, Fixture, Result, fetchVideos, fetchStandings, fetchFixtures, fetchResults } from "@/app/lib/claude";
 import { getStoredTz, DEFAULT_TZ } from "@/app/lib/timezone";
 import TzSelector from "./TzSelector";
@@ -80,6 +80,23 @@ export default function Dashboard() {
     }
   }, []);
 
+  const touchStartX = useRef<number>(0);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(delta) < 50) return;
+    const currentIndex = TABS.findIndex(t => t.id === tab);
+    if (delta < 0 && currentIndex < TABS.length - 1) {
+      setTab(TABS[currentIndex + 1].id);
+    } else if (delta > 0 && currentIndex > 0) {
+      setTab(TABS[currentIndex - 1].id);
+    }
+  }, [tab]);
+
   const loadAll = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([loadVideos(), loadResults(), loadStandings(), loadFixtures()]);
@@ -134,7 +151,7 @@ export default function Dashboard() {
       </div>
 
       {/* Content */}
-      <div className="py-6">
+      <div className="py-6" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         {tab === "videos"    && <VideosTab   data={videos.data}   loading={videos.loading}   error={videos.error} />}
         {tab === "standings" && <StandingsTab data={standing.data} loading={standing.loading} error={standing.error} />}
         {tab === "results"   && <ResultsTab   data={results.data}  loading={results.loading}  error={results.error}  tz={tz} />}
