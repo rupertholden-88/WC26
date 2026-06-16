@@ -196,11 +196,10 @@ body {
 }
 .trophy-glow { animation: trophy-glow 3s ease infinite; }
 
-/* ─── US-flag-filled "6" in the WC26 title ─── */
-.flag-six {
-  position: relative;
+/* ─── US-flag-filled "26" in the WC26 title ─── */
+.flag-text {
   background-image:
-    /* blue canton, top-left quarter */
+    /* blue canton, top-left (40% × 53.8% — true flag proportions) */
     linear-gradient(#3c3b6e, #3c3b6e),
     /* 13 red & white stripes */
     repeating-linear-gradient(
@@ -208,15 +207,13 @@ body {
       #b22234 0,        #b22234 7.69%,
       #ffffff 7.69%,    #ffffff 15.38%
     );
-  background-size: 50% 53%, 100% 100%;
+  background-size: 40% 53.8%, 100% 100%;
   background-position: left top, left top;
   background-repeat: no-repeat, no-repeat;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  /* subtle star fleck in the canton */
-  text-shadow: none;
 }
 
 /* ─── Score digit ─── */
