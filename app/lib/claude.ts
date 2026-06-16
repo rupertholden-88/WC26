@@ -11,6 +11,7 @@ export interface TeamStanding {
   won: number;
   drawn: number;
   lost: number;
+  gf: number;
   gd: number;
   pts: number;
 }

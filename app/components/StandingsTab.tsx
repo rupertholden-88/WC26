@@ -25,23 +25,33 @@ function TeamRow({
   team,
   pos,
   isQual,
+  isThirdQual,
 }: {
   team: GroupStanding["teams"][0];
   pos: number;
   isQual: boolean;
+  isThirdQual?: boolean;
 }) {
   return (
     <tr
       className="border-b border-[var(--border-dim)] last:border-0"
-      style={isQual ? { background: "var(--bg-qual)" } : undefined}
+      style={isQual || isThirdQual ? { background: "var(--bg-qual)" } : undefined}
     >
       <td className="pl-3 pr-2 py-2.5 w-5">
         <span className="font-[family-name:var(--font-display)] text-[11px] text-[var(--text-faint)]">{pos}</span>
       </td>
       <td className="py-2.5 pr-2">
-        <span className={`text-[13px] font-medium ${isQual ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
-          {team.name}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className={`text-[13px] font-medium ${isQual || isThirdQual ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
+            {team.name}
+          </span>
+          {isThirdQual && (
+            <span className="text-[8px] font-bold tracking-widest uppercase px-1 py-px rounded"
+                  style={{ background: "var(--green-dark)", color: "var(--green)" }}>
+              Q3
+            </span>
+          )}
+        </div>
       </td>
       <td className="py-2.5 pr-2 text-center text-[12px] text-[var(--text-dim)]">{team.played}</td>
       <td className="py-2.5 pr-2 text-center text-[12px] text-[var(--text-dim)]">
@@ -56,7 +66,25 @@ function TeamRow({
   );
 }
 
-function GroupCard({ g }: { g: GroupStanding }) {
+// Returns the set of team names that qualify as best 8 third-place finishers.
+// Criteria (FIFA): pts → gd → gf → wins
+function bestThirdPlace(data: GroupStanding[]): Set<string> {
+  const thirds = data
+    .map(g => g.teams[2])
+    .filter(Boolean)
+    .filter(t => t.played > 0);
+
+  thirds.sort((a, b) =>
+    b.pts - a.pts ||
+    b.gd  - a.gd  ||
+    b.gf  - a.gf  ||
+    b.won - a.won
+  );
+
+  return new Set(thirds.slice(0, 8).map(t => t.name));
+}
+
+function GroupCard({ g, qualThirds }: { g: GroupStanding; qualThirds: Set<string> }) {
   const accent = GROUP_COLORS[g.group] ?? "#f5a623";
   return (
     <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden hover:border-[var(--bg-muted)] transition-colors duration-200">
@@ -84,7 +112,13 @@ function GroupCard({ g }: { g: GroupStanding }) {
         </thead>
         <tbody>
           {(g.teams ?? []).map((t, i) => (
-            <TeamRow key={i} team={t} pos={i + 1} isQual={i < 2} />
+            <TeamRow
+              key={i}
+              team={t}
+              pos={i + 1}
+              isQual={i < 2}
+              isThirdQual={i === 2 && qualThirds.has(t.name)}
+            />
           ))}
         </tbody>
       </table>
@@ -101,15 +135,22 @@ export default function StandingsTab({ data, loading, error }: Props) {
   if (error) return <ErrorState message={error} />;
   if (!data || data.length === 0) return <EmptyState message="Standings unavailable — try refreshing." />;
 
+  const qualThirds = bestThirdPlace(data);
+  const thirdsDone = data.filter(g => g.teams[2]?.played > 0).length;
+
   return (
     <div className="fadein">
       <SectionLabel>Group Stage Standings · {today}</SectionLabel>
       <p className="text-xs text-[var(--text-dim)] mb-5">
-        Top 2 per group qualify automatically. 8 best third-place teams also advance.
+        Top 2 per group qualify automatically.{" "}
+        {thirdsDone > 0
+          ? <>Best 8 of 12 third-place teams also advance — <span className="text-[var(--green)] font-semibold">Q3</span> shows current qualifiers ({thirdsDone}/12 groups played).</>
+          : <>8 best third-place teams also advance.</>
+        }
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {data.map((g, i) => (
-          <GroupCard key={i} g={g} />
+          <GroupCard key={i} g={g} qualThirds={qualThirds} />
         ))}
       </div>
     </div>
