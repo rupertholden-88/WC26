@@ -34,16 +34,12 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                 <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
                      style={{ background: "linear-gradient(to bottom, var(--green), var(--green-mid), transparent)" }} />
 
-                {/* Group + channel row */}
+                {/* Group row */}
                 <div className="flex items-center justify-between mb-3 pl-2">
                   <p className="font-[family-name:var(--font-display)] text-[10px] font-semibold
                                  tracking-[0.16em] uppercase text-[var(--text-dim)]">
                     {r.group}
                   </p>
-                  <span className={`text-[9px] font-bold tracking-[0.12em] uppercase px-2 py-0.5 rounded
-                                    ${r.channel === "ITV" ? "badge-itv" : "badge-bbc"}`}>
-                    {r.channel}
-                  </span>
                 </div>
 
                 {/* Score row */}
