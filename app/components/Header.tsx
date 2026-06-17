@@ -22,14 +22,14 @@ export default function Header() {
         <div className="flex-1 bg-[var(--green-mid)]" />
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-5 pb-4">
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-3 pb-2 sm:pt-5 sm:pb-4">
         <div className="flex items-start justify-between gap-4">
           {/* Left — title block */}
           <div>
             {/* Eyebrow */}
-            <div className="flex items-center gap-2 mb-2">
-              <span className="trophy-glow text-[16px]">🏆</span>
-              <p className="font-[family-name:var(--font-display)] text-[10px] font-semibold
+            <div className="flex items-center gap-2 mb-1 sm:mb-2">
+              <span className="trophy-glow text-[14px] sm:text-[16px]">🏆</span>
+              <p className="font-[family-name:var(--font-display)] text-[9px] sm:text-[10px] font-semibold
                              tracking-[0.28em] text-[var(--green)] uppercase">
                 FIFA World Cup 2026
               </p>
@@ -37,10 +37,10 @@ export default function Header() {
 
             {/* Main title */}
             <h1 className="font-[family-name:var(--font-display)] leading-none">
-              <span className="block text-[38px] sm:text-[48px] font-bold tracking-tight text-[var(--text-primary)]">
+              <span className="block text-[26px] sm:text-[48px] font-bold tracking-tight text-[var(--text-primary)]">
                 WC<span className="flag-text">26</span>
               </span>
-              <span className="block text-[38px] sm:text-[48px] font-bold tracking-tight
+              <span className="block text-[26px] sm:text-[48px] font-bold tracking-tight
                                text-transparent bg-clip-text"
                     style={{ backgroundImage: "linear-gradient(135deg, #f5a623 0%, #ffcc66 50%, #c47d10 100%)" }}>
                 Dashboard
@@ -50,12 +50,12 @@ export default function Header() {
 
           {/* Right — date, theme toggle + live badge */}
           <div className="text-right shrink-0 pt-1">
-            <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.18em] font-semibold leading-tight">
+            <p className="text-[9px] sm:text-[10px] text-[var(--text-dim)] uppercase tracking-[0.18em] font-semibold leading-tight">
               {today}
             </p>
 
             {/* Live badge + theme toggle */}
-            <div className="flex items-center justify-end gap-2 mt-3">
+            <div className="flex items-center justify-end gap-2 mt-2 sm:mt-3">
               <ThemeToggle />
               <div className="relative flex items-center justify-center w-5 h-5">
                 <span className="broadcast-ring absolute inset-0 rounded-full border border-[var(--green)]" />
@@ -67,8 +67,8 @@ export default function Header() {
               </span>
             </div>
 
-            {/* Stadium silhouette — decorative */}
-            <div className="mt-4 text-[var(--border)] text-[28px] select-none" aria-hidden>
+            {/* Stadium silhouette — decorative, hidden on mobile */}
+            <div className="hidden sm:block mt-4 text-[var(--border)] text-[28px] select-none" aria-hidden>
               🏟️
             </div>
           </div>
