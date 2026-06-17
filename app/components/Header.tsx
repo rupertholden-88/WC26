@@ -35,12 +35,21 @@ export default function Header() {
               </p>
             </div>
 
-            {/* Main title */}
+            {/* Main title — single line on mobile, stacked on desktop */}
             <h1 className="font-[family-name:var(--font-display)] leading-none">
-              <span className="block text-[26px] sm:text-[48px] font-bold tracking-tight text-[var(--text-primary)]">
+              <span className="sm:hidden flex items-baseline gap-2">
+                <span className="text-[28px] font-bold tracking-tight text-[var(--text-primary)]">
+                  WC<span className="flag-text">26</span>
+                </span>
+                <span className="text-[28px] font-bold tracking-tight text-transparent bg-clip-text"
+                      style={{ backgroundImage: "linear-gradient(135deg, #f5a623 0%, #ffcc66 50%, #c47d10 100%)" }}>
+                  Dashboard
+                </span>
+              </span>
+              <span className="hidden sm:block text-[48px] font-bold tracking-tight text-[var(--text-primary)]">
                 WC<span className="flag-text">26</span>
               </span>
-              <span className="block text-[26px] sm:text-[48px] font-bold tracking-tight
+              <span className="hidden sm:block text-[48px] font-bold tracking-tight
                                text-transparent bg-clip-text"
                     style={{ backgroundImage: "linear-gradient(135deg, #f5a623 0%, #ffcc66 50%, #c47d10 100%)" }}>
                 Dashboard
