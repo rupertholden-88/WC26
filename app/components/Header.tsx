@@ -23,65 +23,77 @@ export default function Header() {
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-3 pb-2 sm:pt-5 sm:pb-4">
-        <div className="flex items-start justify-between gap-4">
-          {/* Left — title block */}
-          <div>
-            {/* Eyebrow */}
-            <div className="flex items-center gap-2 mb-1 sm:mb-2">
-              <span className="trophy-glow text-[14px] sm:text-[16px]">🏆</span>
-              <p className="font-[family-name:var(--font-display)] text-[9px] sm:text-[10px] font-semibold
-                             tracking-[0.28em] text-[var(--green)] uppercase">
+
+        {/* Mobile layout */}
+        <div className="sm:hidden">
+          {/* Eyebrow row: trophy label + controls flush right */}
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <span className="trophy-glow text-[14px]">🏆</span>
+              <p className="font-[family-name:var(--font-display)] text-[9px] font-semibold tracking-[0.28em] text-[var(--green)] uppercase">
                 FIFA World Cup 2026
               </p>
             </div>
-
-            {/* Main title — single line on mobile, stacked on desktop */}
-            <h1 className="font-[family-name:var(--font-display)] leading-none">
-              <span className="sm:hidden flex items-baseline gap-2">
-                <span className="text-[28px] font-bold tracking-tight text-[var(--text-primary)]">
-                  WC<span className="flag-text">26</span>
-                </span>
-                <span className="text-[28px] font-bold tracking-tight text-transparent bg-clip-text"
-                      style={{ backgroundImage: "linear-gradient(135deg, #f5a623 0%, #ffcc66 50%, #c47d10 100%)" }}>
-                  Dashboard
-                </span>
-              </span>
-              <span className="hidden sm:block text-[48px] font-bold tracking-tight text-[var(--text-primary)]">
-                WC<span className="flag-text">26</span>
-              </span>
-              <span className="hidden sm:block text-[48px] font-bold tracking-tight
-                               text-transparent bg-clip-text"
-                    style={{ backgroundImage: "linear-gradient(135deg, #f5a623 0%, #ffcc66 50%, #c47d10 100%)" }}>
-                Dashboard
-              </span>
-            </h1>
-          </div>
-
-          {/* Right — date, theme toggle + live badge */}
-          <div className="text-right shrink-0 pt-1">
-            <p className="text-[9px] sm:text-[10px] text-[var(--text-dim)] uppercase tracking-[0.18em] font-semibold leading-tight">
-              {today}
-            </p>
-
-            {/* Live badge + theme toggle */}
-            <div className="flex items-center justify-end gap-2 mt-2 sm:mt-3">
+            <div className="flex items-center gap-2">
               <ThemeToggle />
               <div className="relative flex items-center justify-center w-5 h-5">
                 <span className="broadcast-ring absolute inset-0 rounded-full border border-[var(--green)]" />
                 <span className="pulse-dot w-2 h-2 rounded-full bg-[var(--green)] inline-block relative z-10" />
               </div>
-              <span className="font-[family-name:var(--font-display)] text-[13px] font-semibold
-                               tracking-[0.2em] text-[var(--green)] uppercase">
+              <span className="font-[family-name:var(--font-display)] text-[13px] font-semibold tracking-[0.2em] text-[var(--green)] uppercase">
                 Live
               </span>
             </div>
+          </div>
+          {/* Single-line title */}
+          <h1 className="font-[family-name:var(--font-display)] leading-none flex items-baseline gap-2">
+            <span className="text-[28px] font-bold tracking-tight text-[var(--text-primary)]">
+              WC<span className="flag-text">26</span>
+            </span>
+            <span className="text-[28px] font-bold tracking-tight text-transparent bg-clip-text"
+                  style={{ backgroundImage: "linear-gradient(135deg, #f5a623 0%, #ffcc66 50%, #c47d10 100%)" }}>
+              Dashboard
+            </span>
+          </h1>
+        </div>
 
-            {/* Stadium silhouette — decorative, hidden on mobile */}
-            <div className="hidden sm:block mt-4 text-[var(--border)] text-[28px] select-none" aria-hidden>
-              🏟️
+        {/* Desktop layout */}
+        <div className="hidden sm:flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="trophy-glow text-[16px]">🏆</span>
+              <p className="font-[family-name:var(--font-display)] text-[10px] font-semibold tracking-[0.28em] text-[var(--green)] uppercase">
+                FIFA World Cup 2026
+              </p>
             </div>
+            <h1 className="font-[family-name:var(--font-display)] leading-none">
+              <span className="block text-[48px] font-bold tracking-tight text-[var(--text-primary)]">
+                WC<span className="flag-text">26</span>
+              </span>
+              <span className="block text-[48px] font-bold tracking-tight text-transparent bg-clip-text"
+                    style={{ backgroundImage: "linear-gradient(135deg, #f5a623 0%, #ffcc66 50%, #c47d10 100%)" }}>
+                Dashboard
+              </span>
+            </h1>
+          </div>
+          <div className="text-right shrink-0 pt-1">
+            <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-[0.18em] font-semibold leading-tight">
+              {today}
+            </p>
+            <div className="flex items-center justify-end gap-2 mt-3">
+              <ThemeToggle />
+              <div className="relative flex items-center justify-center w-5 h-5">
+                <span className="broadcast-ring absolute inset-0 rounded-full border border-[var(--green)]" />
+                <span className="pulse-dot w-2 h-2 rounded-full bg-[var(--green)] inline-block relative z-10" />
+              </div>
+              <span className="font-[family-name:var(--font-display)] text-[13px] font-semibold tracking-[0.2em] text-[var(--green)] uppercase">
+                Live
+              </span>
+            </div>
+            <div className="mt-4 text-[var(--border)] text-[28px] select-none" aria-hidden>🏟️</div>
           </div>
         </div>
+
       </div>
 
       {/* Bottom gradient fade */}
