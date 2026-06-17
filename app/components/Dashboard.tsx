@@ -110,6 +110,17 @@ export default function Dashboard() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  // Refresh on visibility change (e.g. returning to the tab) and hourly
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === "visible") loadAll(); };
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = setInterval(loadAll, 60 * 60 * 1000);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(timer);
+    };
+  }, [loadAll]);
+
   // Touch gesture refs
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
