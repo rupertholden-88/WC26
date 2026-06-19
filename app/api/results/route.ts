@@ -6,21 +6,6 @@ export const maxDuration = 30;
 const FD_BASE = "https://api.football-data.org/v4";
 const WC_CODE = "WC";
 
-type Goal = {
-  minute: number;
-  injuryTime: number | null;
-  type: string;
-  team: { id: number; name: string };
-  scorer: { id: number; name: string };
-};
-
-function formatGoal(g: Goal): string {
-  const name = g.scorer?.name?.split(" ").pop() ?? "?";
-  const min = g.injuryTime ? `${g.minute}+${g.injuryTime}'` : `${g.minute}'`;
-  const suffix = g.type === "PENALTY" ? " (P)" : g.type === "OWN_GOAL" ? " (OG)" : "";
-  return `${name} ${min}${suffix}`;
-}
-
 function toBST(utcStr: string): string {
   const d = new Date(utcStr);
   const bst = new Date(d.getTime() + 60 * 60 * 1000);
@@ -52,31 +37,13 @@ export async function GET() {
     }
 
     const data = await res.json();
-    const finished = (data.matches ?? []).filter((m: { status: string }) => m.status === "FINISHED");
 
-    // Fetch individual match details in parallel to get goal scorers
-    const details = await Promise.all(
-      finished.map((m: { id: number }) =>
-        fetch(`${FD_BASE}/matches/${m.id}`, {
-          headers: { "X-Auth-Token": apiKey },
-          cache: "no-store",
-        })
-          .then(r => r.json())
-          .catch(() => null)
-      )
-    );
-
-    const goalsMap: Record<number, Goal[]> = {};
-    for (const d of details) {
-      if (d?.id && Array.isArray(d.goals)) goalsMap[d.id] = d.goals;
-    }
-
-    const results = finished
+    const results = (data.matches ?? [])
+      .filter((m: { status: string }) => m.status === "FINISHED")
       .map((m: {
-        id: number;
         utcDate: string;
-        homeTeam: { id: number; name: string; shortName: string };
-        awayTeam: { id: number; name: string; shortName: string };
+        homeTeam: { name: string; shortName: string };
+        awayTeam: { name: string; shortName: string };
         score: { fullTime: { home: number | null; away: number | null } };
         stage: string;
         group: string | null;
@@ -86,9 +53,6 @@ export async function GET() {
         const group = m.group
           ? `Group ${m.group.replace(/^GROUP[_\s]*/i, "").trim()}`
           : m.stage?.replace(/_/g, " ") ?? "";
-        const goals: Goal[] = goalsMap[m.id] ?? [];
-        const homeScorers = goals.filter(g => g.team.id === m.homeTeam.id).map(formatGoal);
-        const awayScorers = goals.filter(g => g.team.id === m.awayTeam.id).map(formatGoal);
         return {
           utcDate: m.utcDate,
           time: toBST(m.utcDate),
@@ -96,8 +60,8 @@ export async function GET() {
           away,
           homeScore: m.score.fullTime.home,
           awayScore: m.score.fullTime.away,
-          homeScorers,
-          awayScorers,
+          homeScorers: [],
+          awayScorers: [],
           group,
           channel: getBroadcaster(m.homeTeam.name, m.awayTeam.name),
         };
