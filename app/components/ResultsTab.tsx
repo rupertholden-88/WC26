@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Result } from "@/app/lib/claude";
 import { formatInTz, getTzAbbr } from "@/app/lib/timezone";
 import { Spinner, ErrorState, EmptyState, SectionLabel } from "./ui";
@@ -15,6 +15,7 @@ interface Props {
 export default function ResultsTab({ data, loading, error, tz }: Props) {
   const tzAbbr = getTzAbbr(tz);
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
+  const tapRef = useRef<{ x: number; y: number } | null>(null);
 
   const toggle = (i: number) => setExpandedCard(prev => prev === i ? null : i);
 
@@ -35,8 +36,17 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
             return (
               <div
                 key={i}
-                className="result-card bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-4 relative overflow-hidden cursor-pointer"
+                className={`result-card bg-[var(--bg-card)] border rounded-xl px-4 py-4 relative overflow-hidden cursor-pointer transition-colors duration-150
+                  ${isExpanded ? "border-[var(--accent)]" : "border-[var(--border)]"}`}
                 onClick={() => toggle(i)}
+                onTouchStart={(e) => { tapRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+                onTouchEnd={(e) => {
+                  if (!tapRef.current) return;
+                  const dx = Math.abs(e.changedTouches[0].clientX - tapRef.current.x);
+                  const dy = Math.abs(e.changedTouches[0].clientY - tapRef.current.y);
+                  tapRef.current = null;
+                  if (dx < 10 && dy < 10) { e.preventDefault(); toggle(i); }
+                }}
               >
                 {/* Green left accent stripe */}
                 <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
