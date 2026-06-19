@@ -15,26 +15,6 @@ function toBST(utcStr: string): string {
   return `${hh}:${mm}`;
 }
 
-const NAME_ALIASES: Record<string, string> = {
-  "south korea": "korea republic",
-  "republic of korea": "korea republic",
-  "usa": "united states",
-  "us": "united states",
-  "dr congo": "congo dr",
-  "democratic republic of congo": "congo dr",
-  "côte d'ivoire": "ivory coast",
-  "cote d'ivoire": "ivory coast",
-  "türkiye": "turkey",
-  "cape verde": "cape verde islands",
-  "bosnia and herzegovina": "bosnia-herzegovina",
-  "bosnia & herzegovina": "bosnia-herzegovina",
-};
-
-function norm(name: string): string {
-  const lower = name.toLowerCase().trim();
-  return NAME_ALIASES[lower] ?? lower;
-}
-
 export async function GET() {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) {
@@ -47,7 +27,6 @@ export async function GET() {
     const dateFrom = since.toISOString().split("T")[0];
     const dateTo = now.toISOString().split("T")[0];
 
-    // Fetch football-data.org match list
     const res = await fetch(
       `${FD_BASE}/competitions/${WC_CODE}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=FINISHED`,
       { headers: { "X-Auth-Token": apiKey }, cache: "no-store" }
@@ -59,20 +38,23 @@ export async function GET() {
     const data = await res.json();
     const finished = (data.matches ?? []).filter((m: { status: string }) => m.status === "FINISHED");
 
-    // Fetch ESPN scoreboard for each date to get event IDs
+    // Fetch ESPN scoreboard for each date
     const espnDates = [...new Set([dateFrom, dateTo])].map(d => d.replace(/-/g, ""));
     type EspnEvent = { id: string; date: string; competitions: Array<{ competitors: Array<{ homeAway: string; team: { displayName: string } }> }> };
     const espnEvents: EspnEvent[] = [];
+    const espnRaw: unknown[] = [];
+
     await Promise.all(espnDates.map(async date => {
-      const r = await fetch(`${ESPN}/scoreboard?dates=${date}`, { cache: "no-store" }).catch(() => null);
-      if (!r?.ok) return;
+      const url = `${ESPN}/scoreboard?dates=${date}`;
+      const r = await fetch(url, { cache: "no-store" }).catch(() => null);
+      if (!r) { espnRaw.push({ date, error: "fetch failed" }); return; }
       const d = await r.json().catch(() => null);
+      espnRaw.push({ date, status: r.status, eventCount: d?.events?.length ?? 0 });
       for (const e of d?.events ?? []) {
         if (e.status?.type?.completed) espnEvents.push(e);
       }
     }));
 
-    // Fetch individual ESPN summaries in parallel for scoring plays
     const summaries = await Promise.all(
       espnEvents.map(e =>
         fetch(`${ESPN}/summary?event=${e.id}`, { cache: "no-store" })
@@ -81,71 +63,30 @@ export async function GET() {
       )
     );
 
-    // Build scorer map keyed by "homeNorm|awayNorm"
-    const scorerMap: Record<string, { home: string[]; away: string[] }> = {};
-    for (let i = 0; i < espnEvents.length; i++) {
-      const event = espnEvents[i];
-      const summary = summaries[i];
-      if (!summary) continue;
-      const comp = event.competitions?.[0];
-      if (!comp) continue;
-      const homeComp = comp.competitors?.find(c => c.homeAway === "home");
-      const awayComp = comp.competitors?.find(c => c.homeAway === "away");
-      if (!homeComp || !awayComp) continue;
+    const firstSummary = summaries[0];
 
-      const homeNorm = norm(homeComp.team.displayName);
-      const awayNorm = norm(awayComp.team.displayName);
-      const key = `${homeNorm}|${awayNorm}`;
-      const entry = { home: [] as string[], away: [] as string[] };
-
-      for (const play of summary.scoringPlays ?? []) {
-        const playerName = play.athletesInvolved?.[0]?.displayName ?? "";
-        if (!playerName) continue;
-        const lastName = playerName.split(" ").pop() ?? playerName;
-        const minute = play.clock?.value != null ? Math.floor(play.clock.value / 60) : "?";
-        const suffix = play.type?.text?.toLowerCase().includes("own") ? " (OG)"
-          : play.type?.text?.toLowerCase().includes("penalty") ? " (P)" : "";
-        const formatted = `${lastName} ${minute}'${suffix}`;
-        const teamNorm = norm(play.team?.displayName ?? "");
-        if (teamNorm === homeNorm) entry.home.push(formatted);
-        else if (teamNorm === awayNorm) entry.away.push(formatted);
-      }
-
-      scorerMap[key] = entry;
-    }
-
-    const results = finished
-      .map((m: {
-        utcDate: string;
-        homeTeam: { name: string; shortName: string };
-        awayTeam: { name: string; shortName: string };
-        score: { fullTime: { home: number | null; away: number | null } };
-        stage: string;
-        group: string | null;
-      }) => {
-        const home = m.homeTeam.shortName ?? m.homeTeam.name;
-        const away = m.awayTeam.shortName ?? m.awayTeam.name;
-        const group = m.group
-          ? `Group ${m.group.replace(/^GROUP[_\s]*/i, "").trim()}`
-          : m.stage?.replace(/_/g, " ") ?? "";
-        const key = `${norm(m.homeTeam.name)}|${norm(m.awayTeam.name)}`;
-        const scorers = scorerMap[key] ?? { home: [], away: [] };
-        return {
-          utcDate: m.utcDate,
-          time: toBST(m.utcDate),
-          home,
-          away,
-          homeScore: m.score.fullTime.home,
-          awayScore: m.score.fullTime.away,
-          homeScorers: scorers.home,
-          awayScorers: scorers.away,
-          group,
-          channel: getBroadcaster(m.homeTeam.name, m.awayTeam.name),
-        };
-      })
-      .sort((a: { utcDate: string }, b: { utcDate: string }) => b.utcDate.localeCompare(a.utcDate));
-
-    return NextResponse.json({ results });
+    return NextResponse.json({
+      _debug: {
+        espnDates,
+        espnRaw,
+        espnEventsFound: espnEvents.length,
+        firstEventTeams: espnEvents[0]?.competitions?.[0]?.competitors?.map(c => c.team.displayName),
+        firstSummaryKeys: firstSummary ? Object.keys(firstSummary) : null,
+        firstScoringPlays: firstSummary?.scoringPlays?.slice(0, 2) ?? null,
+      },
+      results: finished.map((m: { utcDate: string; homeTeam: { name: string; shortName: string }; awayTeam: { name: string; shortName: string }; score: { fullTime: { home: number | null; away: number | null } }; stage: string; group: string | null }) => ({
+        utcDate: m.utcDate,
+        time: toBST(m.utcDate),
+        home: m.homeTeam.shortName ?? m.homeTeam.name,
+        away: m.awayTeam.shortName ?? m.awayTeam.name,
+        homeScore: m.score.fullTime.home,
+        awayScore: m.score.fullTime.away,
+        homeScorers: [],
+        awayScorers: [],
+        group: m.group ? `Group ${m.group.replace(/^GROUP[_\s]*/i, "").trim()}` : m.stage?.replace(/_/g, " ") ?? "",
+        channel: getBroadcaster(m.homeTeam.name, m.awayTeam.name),
+      })),
+    });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
