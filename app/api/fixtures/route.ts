@@ -101,25 +101,59 @@ export async function GET() {
     type Probs = { homeProb: number; drawProb: number; awayProb: number };
     const probMap = new Map<string, Probs>();
 
+    // Collect upcoming event IDs to try predictor endpoint as fallback
+    const upcomingEvents: Array<{ id: string; homeAway: EspnCompetitor[] }> = [];
+
     for (const espnData of espnResults) {
       for (const e of espnData?.events ?? []) {
         const comp = e.competitions?.[0];
-        const odds: EspnOdds = comp?.odds?.[0];
-        if (!odds) continue;
-
-        const homeProb = toProb(odds.homeTeamOdds?.current?.winPercentage);
-        const awayProb = toProb(odds.awayTeamOdds?.current?.winPercentage);
-        const drawProb = toProb(odds.drawOdds?.current?.winPercentage);
-        if (!homeProb && !awayProb) continue;
-
         const comps: EspnCompetitor[] = comp?.competitors ?? [];
+        const espnHome = comps.find((c: EspnCompetitor) => c.homeAway === "home")?.team.displayName ?? comps[0]?.team.displayName ?? "";
+        const espnAway = comps.find((c: EspnCompetitor) => c.homeAway === "away")?.team.displayName ?? comps[1]?.team.displayName ?? "";
+        const key = espnHome && espnAway ? `${normalize(espnHome)}|${normalize(espnAway)}` : null;
+
+        // Try scoreboard-embedded odds first
+        const odds: EspnOdds = comp?.odds?.[0];
+        if (odds) {
+          const homeProb = toProb(odds.homeTeamOdds?.current?.winPercentage);
+          const awayProb = toProb(odds.awayTeamOdds?.current?.winPercentage);
+          const drawProb = toProb(odds.drawOdds?.current?.winPercentage);
+          if ((homeProb || awayProb) && key) {
+            probMap.set(key, { homeProb, drawProb, awayProb });
+            continue;
+          }
+        }
+
+        // Queue upcoming events for predictor fallback
+        const isUpcoming = !e.status?.type?.completed && e.status?.type?.state !== "post";
+        if (isUpcoming && key) {
+          upcomingEvents.push({ id: e.id, homeAway: comps });
+        }
+      }
+    }
+
+    // Try ESPN's predictor endpoint for events without scoreboard odds
+    await Promise.all(
+      upcomingEvents.map(async ({ id, homeAway }) => {
+        const url = `https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/events/${id}/competitions/${id}/predictor`;
+        const r = await fetch(url, { cache: "no-store" }).catch(() => null);
+        if (!r?.ok) return;
+        const p = await r.json().catch(() => null);
+        if (!p) return;
+
+        const homeProb = toProb(p.homeTeam?.teamChancePct ?? p.homeTeam?.gameProjection);
+        const awayProb = toProb(p.awayTeam?.teamChancePct ?? p.awayTeam?.gameProjection);
+        const drawProb = toProb(p.tieChancePct ?? p.tie?.teamChancePct) || Math.max(0, 100 - homeProb - awayProb);
+        if (!homeProb && !awayProb) return;
+
+        const comps = homeAway;
         const espnHome = comps.find(c => c.homeAway === "home")?.team.displayName ?? comps[0]?.team.displayName ?? "";
         const espnAway = comps.find(c => c.homeAway === "away")?.team.displayName ?? comps[1]?.team.displayName ?? "";
         if (espnHome && espnAway) {
           probMap.set(`${normalize(espnHome)}|${normalize(espnAway)}`, { homeProb, drawProb, awayProb });
         }
-      }
-    }
+      })
+    );
 
     const fixtures = (data.matches ?? [])
       .map((m: {
