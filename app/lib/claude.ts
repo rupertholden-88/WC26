@@ -31,6 +31,9 @@ export interface Fixture {
   group: string;
   status: "FINISHED" | "LIVE" | "UPCOMING";
   channel: "ITV" | "BBC";
+  homeProb?: number;
+  drawProb?: number;
+  awayProb?: number;
 }
 
 export interface Result {
