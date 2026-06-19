@@ -46,9 +46,27 @@ function StatusDot({ status }: { status: Fixture["status"] }) {
   return <span className="w-2 h-2 rounded-full bg-[var(--green)] shrink-0" title="Upcoming" />;
 }
 
+function ProbBar({ home, draw, away }: { home: number; draw: number; away: number }) {
+  return (
+    <div className="mt-2.5">
+      <div className="flex rounded-full overflow-hidden h-[3px] gap-px">
+        <div style={{ width: `${home}%`, background: "var(--green)" }} />
+        <div style={{ width: `${draw}%`, background: "var(--border)" }} />
+        <div style={{ width: `${away}%`, background: "var(--text-faint)" }} />
+      </div>
+      <div className="flex justify-between mt-1">
+        <span className="font-[family-name:var(--font-display)] text-[9px] text-[var(--text-dim)] tabular-nums">{home}%</span>
+        <span className="font-[family-name:var(--font-display)] text-[9px] text-[var(--text-faint)] tabular-nums">{draw}% draw</span>
+        <span className="font-[family-name:var(--font-display)] text-[9px] text-[var(--text-dim)] tabular-nums">{away}%</span>
+      </div>
+    </div>
+  );
+}
+
 function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
   const displayTime = f.utcDate ? formatInTz(f.utcDate, tz) : f.time;
   const href = f.channel === "ITV" ? ITV_URL : BBC_URL;
+  const hasProbs = f.status === "UPCOMING" && f.homeProb != null && f.drawProb != null && f.awayProb != null;
 
   const stripeColour =
     f.status === "FINISHED" ? "bg-gradient-to-b from-red-600 via-red-900 to-transparent"
@@ -65,7 +83,7 @@ function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={`card-glow flex items-center gap-3 sm:gap-4 border rounded-xl
+      className={`card-glow flex flex-col border rounded-xl
                  px-4 py-3.5 transition-all duration-200 no-underline group relative overflow-hidden
                  ${cardBg}`}
     >
@@ -75,36 +93,46 @@ function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
         style={!stripeColour ? { background: "linear-gradient(to bottom, var(--green), var(--green-mid), transparent)" } : undefined}
       />
 
-      {/* Status dot + Time */}
-      <div className="shrink-0 w-[60px] pl-2 flex items-center gap-2">
-        <StatusDot status={f.status} />
-        <span className={`font-[family-name:var(--font-display)] text-[13px] font-medium tabular-nums
-                          ${f.status === "FINISHED" ? "text-red-600 line-through decoration-red-800"
-                            : f.status === "LIVE" ? "text-orange-400"
-                            : "text-[var(--text-dim)]"}`}>
-          {displayTime}
-        </span>
+      {/* Main row */}
+      <div className="flex items-center gap-3 sm:gap-4">
+        {/* Status dot + Time */}
+        <div className="shrink-0 w-[60px] pl-2 flex items-center gap-2">
+          <StatusDot status={f.status} />
+          <span className={`font-[family-name:var(--font-display)] text-[13px] font-medium tabular-nums
+                            ${f.status === "FINISHED" ? "text-red-600 line-through decoration-red-800"
+                              : f.status === "LIVE" ? "text-orange-400"
+                              : "text-[var(--text-dim)]"}`}>
+            {displayTime}
+          </span>
+        </div>
+
+        {/* Teams */}
+        <div className="flex-1 min-w-0">
+          <p className={`font-[family-name:var(--font-display)] text-[16px] sm:text-[17px] font-semibold tracking-wide leading-tight
+                         ${f.status === "FINISHED" ? "text-[var(--text-dim)]" : "text-[var(--text-primary)]"}`}>
+            {f.home}
+            <span className="text-[var(--text-faint)] font-medium text-[14px] mx-2">v</span>
+            {f.away}
+          </p>
+          <p className="text-[11px] text-[var(--text-dim)] mt-0.5 font-medium">
+            {f.group}
+            {f.status === "LIVE" && <span className="ml-2 text-orange-400 font-semibold tracking-widest uppercase text-[9px]">● Live</span>}
+            {f.status === "FINISHED" && <span className="ml-2 text-red-600 font-semibold tracking-widest uppercase text-[9px]">FT</span>}
+          </p>
+        </div>
+
+        {/* Channel badge */}
+        <div className="shrink-0">
+          <ChannelBadge channel={f.channel} />
+        </div>
       </div>
 
-      {/* Teams */}
-      <div className="flex-1 min-w-0">
-        <p className={`font-[family-name:var(--font-display)] text-[16px] sm:text-[17px] font-semibold tracking-wide leading-tight
-                       ${f.status === "FINISHED" ? "text-[var(--text-dim)]" : "text-[var(--text-primary)]"}`}>
-          {f.home}
-          <span className="text-[var(--text-faint)] font-medium text-[14px] mx-2">v</span>
-          {f.away}
-        </p>
-        <p className="text-[11px] text-[var(--text-dim)] mt-0.5 font-medium">
-          {f.group}
-          {f.status === "LIVE" && <span className="ml-2 text-orange-400 font-semibold tracking-widest uppercase text-[9px]">● Live</span>}
-          {f.status === "FINISHED" && <span className="ml-2 text-red-600 font-semibold tracking-widest uppercase text-[9px]">FT</span>}
-        </p>
-      </div>
-
-      {/* Channel badge */}
-      <div className="shrink-0">
-        <ChannelBadge channel={f.channel} />
-      </div>
+      {/* Win probability bar */}
+      {hasProbs && (
+        <div className="pl-2 pr-1">
+          <ProbBar home={f.homeProb!} draw={f.drawProb!} away={f.awayProb!} />
+        </div>
+      )}
     </a>
   );
 }
