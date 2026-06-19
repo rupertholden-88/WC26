@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useRef } from "react";
 import { Result } from "@/app/lib/claude";
 import { formatInTz, getTzAbbr } from "@/app/lib/timezone";
 import { Spinner, ErrorState, EmptyState, SectionLabel } from "./ui";
@@ -14,10 +13,6 @@ interface Props {
 
 export default function ResultsTab({ data, loading, error, tz }: Props) {
   const tzAbbr = getTzAbbr(tz);
-  const [expandedCard, setExpandedCard] = useState<number | null>(null);
-  const tapRef = useRef<{ x: number; y: number } | null>(null);
-
-  const toggle = (i: number) => setExpandedCard(prev => prev === i ? null : i);
 
   if (loading) return <Spinner />;
   if (error) return <ErrorState message={error} />;
@@ -31,23 +26,11 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
         <div className="flex flex-col gap-3">
           {data.map((r, i) => {
             const isDraw = r.homeScore === r.awayScore;
-            const isExpanded = expandedCard === i;
             const hasScorers = r.homeScorers?.length > 0 || r.awayScorers?.length > 0;
             return (
               <div
                 key={i}
-                className={`result-card bg-[var(--bg-card)] border rounded-xl px-4 py-4 relative overflow-hidden cursor-pointer transition-colors duration-150
-                  ${isExpanded ? "border-[var(--accent)]" : "border-[var(--border)]"}`}
-                style={{ touchAction: "manipulation" }}
-                onTouchStart={(e) => { tapRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
-                onTouchEnd={(e) => {
-                  if (!tapRef.current) return;
-                  const dx = Math.abs(e.changedTouches[0].clientX - tapRef.current.x);
-                  const dy = Math.abs(e.changedTouches[0].clientY - tapRef.current.y);
-                  tapRef.current = null;
-                  if (dx < 10 && dy < 10) { e.preventDefault(); toggle(i); }
-                }}
-                onClick={() => toggle(i)}
+                className="result-card bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-4 relative overflow-hidden"
               >
                 {/* Green left accent stripe */}
                 <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
@@ -63,13 +46,11 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
 
                 {/* Score row */}
                 <div className="flex items-center justify-between gap-3 pl-2">
-                  {/* Home */}
                   <span className={`flex-1 text-right font-[family-name:var(--font-display)] text-[16px] font-bold leading-tight
                                     ${!isDraw && r.homeScore > r.awayScore ? "text-[var(--text-primary)]" : "text-[var(--text-dim)]"}`}>
                     {r.home}
                   </span>
 
-                  {/* Score box */}
                   <div className="flex items-center gap-px shrink-0">
                     <div className={`w-9 h-9 flex items-center justify-center rounded-l-lg
                                      score-digit text-[20px] font-bold font-[family-name:var(--font-display)]
@@ -90,31 +71,27 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                     </div>
                   </div>
 
-                  {/* Away */}
                   <span className={`flex-1 text-left font-[family-name:var(--font-display)] text-[16px] font-bold leading-tight
                                     ${!isDraw && r.awayScore > r.homeScore ? "text-[var(--text-primary)]" : "text-[var(--text-dim)]"}`}>
                     {r.away}
                   </span>
                 </div>
 
-                {/* Scorers panel — shown while holding */}
-                {isExpanded && (
+                {/* Scorers */}
+                {hasScorers && (
                   <div className="flex items-start gap-3 pl-2 mt-3">
                     <div className="flex-1 flex flex-col items-end gap-1">
-                      {r.homeScorers?.map((s, j) => (
-                        <span key={j} className="text-[11px] font-[family-name:var(--font-display)] text-[var(--text-primary)]">{s}</span>
+                      {r.homeScorers.map((s, j) => (
+                        <span key={j} className="text-[11px] font-[family-name:var(--font-display)] text-[var(--text-dim)]">{s}</span>
                       ))}
                     </div>
                     <div className="w-[94px] shrink-0" />
                     <div className="flex-1 flex flex-col items-start gap-1">
-                      {r.awayScorers?.map((s, j) => (
-                        <span key={j} className="text-[11px] font-[family-name:var(--font-display)] text-[var(--text-primary)]">{s}</span>
+                      {r.awayScorers.map((s, j) => (
+                        <span key={j} className="text-[11px] font-[family-name:var(--font-display)] text-[var(--text-dim)]">{s}</span>
                       ))}
                     </div>
                   </div>
-                )}
-                {isExpanded && !hasScorers && (
-                  <p className="text-[11px] text-[var(--text-dim)] text-center mt-3">Scorers not available</p>
                 )}
 
                 {/* KO time */}
