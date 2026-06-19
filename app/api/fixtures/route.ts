@@ -132,26 +132,50 @@ export async function GET() {
       }
     }
 
-    // Try ESPN's predictor endpoint for events without scoreboard odds
+    // Try ESPN summary pickcenter + core predictor for events without scoreboard odds
+    let _debugFirst: Record<string, unknown> | null = null;
     await Promise.all(
-      upcomingEvents.map(async ({ id, homeAway }) => {
-        const url = `https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/events/${id}/competitions/${id}/predictor`;
-        const r = await fetch(url, { cache: "no-store" }).catch(() => null);
-        if (!r?.ok) return;
-        const p = await r.json().catch(() => null);
-        if (!p) return;
-
-        const homeProb = toProb(p.homeTeam?.teamChancePct ?? p.homeTeam?.gameProjection);
-        const awayProb = toProb(p.awayTeam?.teamChancePct ?? p.awayTeam?.gameProjection);
-        const drawProb = toProb(p.tieChancePct ?? p.tie?.teamChancePct) || Math.max(0, 100 - homeProb - awayProb);
-        if (!homeProb && !awayProb) return;
-
+      upcomingEvents.map(async ({ id, homeAway }, idx) => {
         const comps = homeAway;
         const espnHome = comps.find(c => c.homeAway === "home")?.team.displayName ?? comps[0]?.team.displayName ?? "";
         const espnAway = comps.find(c => c.homeAway === "away")?.team.displayName ?? comps[1]?.team.displayName ?? "";
-        if (espnHome && espnAway) {
-          probMap.set(`${normalize(espnHome)}|${normalize(espnAway)}`, { homeProb, drawProb, awayProb });
+        if (!espnHome || !espnAway) return;
+        const key = `${normalize(espnHome)}|${normalize(espnAway)}`;
+
+        // Try summary pickcenter
+        const sr = await fetch(`${ESPN_BASE}/summary?event=${id}`, { cache: "no-store" }).catch(() => null);
+        const summary = sr?.ok ? await sr.json().catch(() => null) : null;
+
+        // Try core API predictor
+        const predUrl = `https://sports.core.api.espn.com/v2/sports/soccer/leagues/fifa.world/events/${id}/competitions/${id}/predictor`;
+        const pr = await fetch(predUrl, { cache: "no-store" }).catch(() => null);
+        const pred = pr?.ok ? await pr.json().catch(() => null) : null;
+
+        if (idx === 0) {
+          _debugFirst = {
+            id,
+            summaryKeys: summary ? Object.keys(summary) : null,
+            pickcenter: summary?.pickcenter?.[0] ?? null,
+            predictor: pred,
+            predictorStatus: pr?.status ?? null,
+          };
         }
+
+        // Extract from summary pickcenter
+        const pc = (summary?.pickcenter as Array<Record<string, unknown>> | undefined)?.[0];
+        const pcHome = pc?.homeTeamOdds as Record<string, Record<string, number>> | undefined;
+        const pcAway = pc?.awayTeamOdds as Record<string, Record<string, number>> | undefined;
+        const pcDraw = pc?.drawOdds as Record<string, Record<string, number>> | undefined;
+        const predHome = pred?.homeTeam as Record<string, number> | undefined;
+        const predAway = pred?.awayTeam as Record<string, number> | undefined;
+
+        const homeProb = toProb(pcHome?.current?.winPercentage ?? predHome?.teamChancePct ?? predHome?.gameProjection);
+        const awayProb = toProb(pcAway?.current?.winPercentage ?? predAway?.teamChancePct ?? predAway?.gameProjection);
+        if (!homeProb && !awayProb) return;
+
+        const drawRaw = toProb(pcDraw?.current?.winPercentage ?? (pred?.tieChancePct as number | undefined));
+        const drawProb = drawRaw || Math.max(0, 100 - homeProb - awayProb);
+        probMap.set(key, { homeProb, drawProb, awayProb });
       })
     );
 
@@ -205,7 +229,7 @@ export async function GET() {
 
     fixtures.sort((a: { _utc: string }, b: { _utc: string }) => a._utc.localeCompare(b._utc));
     const clean = fixtures.map(({ _utc: _ignored, ...rest }: { _utc: string; [key: string]: unknown }) => rest);
-    return NextResponse.json({ fixtures: clean });
+    return NextResponse.json({ fixtures: clean, _debug: _debugFirst });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
