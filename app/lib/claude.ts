@@ -40,6 +40,8 @@ export interface Result {
   away: string;
   homeScore: number;
   awayScore: number;
+  homeScorers: string[];
+  awayScorers: string[];
   group: string;
   channel: "ITV" | "BBC";
 }

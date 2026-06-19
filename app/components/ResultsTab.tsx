@@ -13,6 +13,7 @@ interface Props {
 
 export default function ResultsTab({ data, loading, error, tz }: Props) {
   const tzAbbr = getTzAbbr(tz);
+
   if (loading) return <Spinner />;
   if (error) return <ErrorState message={error} />;
 
@@ -25,6 +26,7 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
         <div className="flex flex-col gap-3">
           {data.map((r, i) => {
             const isDraw = r.homeScore === r.awayScore;
+            const hasScorers = r.homeScorers?.length > 0 || r.awayScorers?.length > 0;
             return (
               <div
                 key={i}
@@ -44,13 +46,11 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
 
                 {/* Score row */}
                 <div className="flex items-center justify-between gap-3 pl-2">
-                  {/* Home */}
                   <span className={`flex-1 text-right font-[family-name:var(--font-display)] text-[16px] font-bold leading-tight
                                     ${!isDraw && r.homeScore > r.awayScore ? "text-[var(--text-primary)]" : "text-[var(--text-dim)]"}`}>
                     {r.home}
                   </span>
 
-                  {/* Score box */}
                   <div className="flex items-center gap-px shrink-0">
                     <div className={`w-9 h-9 flex items-center justify-center rounded-l-lg
                                      score-digit text-[20px] font-bold font-[family-name:var(--font-display)]
@@ -71,11 +71,25 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                     </div>
                   </div>
 
-                  {/* Away */}
                   <span className={`flex-1 text-left font-[family-name:var(--font-display)] text-[16px] font-bold leading-tight
                                     ${!isDraw && r.awayScore > r.homeScore ? "text-[var(--text-primary)]" : "text-[var(--text-dim)]"}`}>
                     {r.away}
                   </span>
+                </div>
+
+                {/* Scorers */}
+                <div className="flex items-start gap-3 pl-2 mt-3">
+                  <div className="flex-1 flex flex-col items-end gap-1">
+                    {r.homeScorers?.map((s, j) => (
+                      <span key={j} className="text-[11px] font-[family-name:var(--font-display)] text-[var(--text-dim)]">{s}</span>
+                    ))}
+                  </div>
+                  <div className="w-[94px] shrink-0" />
+                  <div className="flex-1 flex flex-col items-start gap-1">
+                    {r.awayScorers?.map((s, j) => (
+                      <span key={j} className="text-[11px] font-[family-name:var(--font-display)] text-[var(--text-dim)]">{s}</span>
+                    ))}
+                  </div>
                 </div>
 
                 {/* KO time */}
