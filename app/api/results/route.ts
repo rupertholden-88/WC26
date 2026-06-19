@@ -27,6 +27,7 @@ function teamsMatch(a: string, b: string): boolean {
 
 type EspnKeyEvent = {
   scoringPlay: boolean;
+  text?: string;
   team: { id: string };
   clock: { displayValue: string };
   participants: Array<{
@@ -47,13 +48,29 @@ type EspnEvent = {
 };
 
 function formatEspnGoal(ev: EspnKeyEvent): string {
-  const scorer = ev.participants?.find(
-    p => p.type?.id === "scorer" || p.type?.text?.toLowerCase().includes("scor")
-  );
-  const name =
+  // ESPN uses various type IDs — try known ones, fall back to first non-assist participant
+  const scorer =
+    ev.participants?.find(p =>
+      p.type?.id === "scorer" ||
+      p.type?.id === "goalScorer" ||
+      p.type?.text?.toLowerCase().includes("scor")
+    ) ??
+    ev.participants?.find(p => !p.type?.text?.toLowerCase().includes("assist")) ??
+    ev.participants?.[0];
+
+  let name =
     scorer?.athlete?.shortName?.split(" ").pop() ??
     scorer?.athlete?.displayName?.split(" ").pop() ??
-    "?";
+    "";
+
+  // Last resort: pull name from event text (e.g. "Messi 45'" or "Goal: Messi")
+  if (!name && ev.text) {
+    const m = ev.text.match(/^([A-Z][^\d(]+)/);
+    if (m) name = m[1].trim().split(" ").pop() ?? "";
+  }
+
+  if (!name) return "";
+
   const raw = ev.clock?.displayValue ?? "";
   const min = raw.includes(":") ? raw.split(":")[0] + "'" : raw;
   const isOG = ev.participants?.some(
@@ -137,8 +154,8 @@ export async function GET() {
 
       const goals = keyEvents.filter(e => e.scoringPlay);
       scorersMap.set(m.id, {
-        homeScorers: goals.filter(e => e.team?.id === homeId).map(formatEspnGoal),
-        awayScorers: goals.filter(e => e.team?.id === awayId).map(formatEspnGoal),
+        homeScorers: goals.filter(e => e.team?.id === homeId).map(formatEspnGoal).filter(Boolean),
+        awayScorers: goals.filter(e => e.team?.id === awayId).map(formatEspnGoal).filter(Boolean),
       });
     }
 
