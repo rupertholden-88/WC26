@@ -15,7 +15,7 @@ interface Props {
 export default function ResultsTab({ data, loading, error, tz }: Props) {
   const tzAbbr = getTzAbbr(tz);
   const [expandedCard, setExpandedCard] = useState<number | null>(null);
-  const tapRef = useRef<{ x: number; y: number; time: number; card: number } | null>(null);
+  const tapRef = useRef<{ x: number; y: number } | null>(null);
 
   const toggle = (i: number) => setExpandedCard(prev => prev === i ? null : i);
 
@@ -38,21 +38,16 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                 key={i}
                 className={`result-card bg-[var(--bg-card)] border rounded-xl px-4 py-4 relative overflow-hidden cursor-pointer transition-colors duration-150
                   ${isExpanded ? "border-[var(--accent)]" : "border-[var(--border)]"}`}
+                style={{ touchAction: "manipulation" }}
+                onTouchStart={(e) => { tapRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
                 onTouchEnd={(e) => {
-                  const t = e.changedTouches[0];
-                  const now = Date.now();
-                  const prev = tapRef.current;
-                  const dx = prev ? Math.abs(t.clientX - prev.x) : 99;
-                  const dy = prev ? Math.abs(t.clientY - prev.y) : 99;
-                  const isDoubleTap = prev && prev.card === i && now - prev.time < 350 && dx < 20 && dy < 20;
-                  if (isDoubleTap) {
-                    e.preventDefault();
-                    tapRef.current = null;
-                    toggle(i);
-                  } else {
-                    tapRef.current = { x: t.clientX, y: t.clientY, time: now, card: i };
-                  }
+                  if (!tapRef.current) return;
+                  const dx = Math.abs(e.changedTouches[0].clientX - tapRef.current.x);
+                  const dy = Math.abs(e.changedTouches[0].clientY - tapRef.current.y);
+                  tapRef.current = null;
+                  if (dx < 10 && dy < 10) { e.preventDefault(); toggle(i); }
                 }}
+                onClick={() => toggle(i)}
               >
                 {/* Green left accent stripe */}
                 <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
