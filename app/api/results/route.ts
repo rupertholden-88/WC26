@@ -102,8 +102,9 @@ export async function GET() {
     const fdData = await fdRes.json();
     const finished = (fdData.matches ?? []).filter((m: { status: string }) => m.status === "FINISHED");
 
-    // Fetch ESPN scoreboard for each unique date in the window
-    const espnDates = [...new Set([dateFrom, dateTo])].map(d => d.replace(/-/g, ""));
+    // Fetch ESPN scoreboard for each unique date in the window (plus one extra day for timezone edge cases)
+    const dayBefore = new Date(since.getTime() - 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+    const espnDates = [...new Set([dayBefore, dateFrom, dateTo])].map(d => d.replace(/-/g, ""));
     const espnEvents: EspnEvent[] = [];
     await Promise.all(
       espnDates.map(async date => {
@@ -146,8 +147,9 @@ export async function GET() {
       if (!summary) continue;
 
       const comps = espnEvent.competitions?.[0]?.competitors ?? [];
-      const homeId = comps.find((c: EspnCompetitor) => c.homeAway === "home")?.team.id ?? "";
-      const awayId = comps.find((c: EspnCompetitor) => c.homeAway === "away")?.team.id ?? "";
+      // Fall back to index order if homeAway field is missing
+      const homeId = comps.find((c: EspnCompetitor) => c.homeAway === "home")?.team.id ?? comps[0]?.team.id ?? "";
+      const awayId = comps.find((c: EspnCompetitor) => c.homeAway === "away")?.team.id ?? comps[1]?.team.id ?? "";
 
       const keyEvents = summary.keyEvents as EspnKeyEvent[] | undefined;
       if (!Array.isArray(keyEvents)) continue;
