@@ -78,19 +78,21 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                 </div>
 
                 {/* Scorers */}
-                <div className="flex items-start gap-3 pl-2 mt-3">
-                  <div className="flex-1 flex flex-col items-end gap-1">
-                    {r.homeScorers?.map((s, j) => (
-                      <span key={j} className="text-[11px] font-[family-name:var(--font-display)] text-[var(--text-dim)]">{s}</span>
-                    ))}
+                {hasScorers && (
+                  <div className="flex items-start gap-3 pl-2 mt-3">
+                    <div className="flex-1 flex flex-col items-end gap-1">
+                      {r.homeScorers.map((s, j) => (
+                        <span key={j} className="text-[11px] font-[family-name:var(--font-display)] text-[var(--text-dim)]">{s}</span>
+                      ))}
+                    </div>
+                    <div className="w-[94px] shrink-0" />
+                    <div className="flex-1 flex flex-col items-start gap-1">
+                      {r.awayScorers.map((s, j) => (
+                        <span key={j} className="text-[11px] font-[family-name:var(--font-display)] text-[var(--text-dim)]">{s}</span>
+                      ))}
+                    </div>
                   </div>
-                  <div className="w-[94px] shrink-0" />
-                  <div className="flex-1 flex flex-col items-start gap-1">
-                    {r.awayScorers?.map((s, j) => (
-                      <span key={j} className="text-[11px] font-[family-name:var(--font-display)] text-[var(--text-dim)]">{s}</span>
-                    ))}
-                  </div>
-                </div>
+                )}
 
                 {/* KO time */}
                 <p className="text-[10px] text-[var(--text-dim)] text-center mt-3 tracking-widest">

@@ -5,21 +5,7 @@ export const maxDuration = 30;
 
 const FD_BASE = "https://api.football-data.org/v4";
 const WC_CODE = "WC";
-
-type Goal = {
-  minute: number;
-  injuryTime: number | null;
-  type: string;
-  team: { id: number; name: string };
-  scorer: { id: number; name: string };
-};
-
-function formatGoal(g: Goal): string {
-  const name = g.scorer?.name?.split(" ").pop() ?? "?";
-  const min = g.injuryTime ? `${g.minute}+${g.injuryTime}'` : `${g.minute}'`;
-  const suffix = g.type === "PENALTY" ? " (P)" : g.type === "OWN_GOAL" ? " (OG)" : "";
-  return `${name} ${min}${suffix}`;
-}
+const ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world";
 
 function toBST(utcStr: string): string {
   const d = new Date(utcStr);
@@ -45,66 +31,62 @@ export async function GET() {
       `${FD_BASE}/competitions/${WC_CODE}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=FINISHED`,
       { headers: { "X-Auth-Token": apiKey }, cache: "no-store" }
     );
-
     if (!res.ok) {
       const err = await res.text();
       return NextResponse.json({ error: `football-data.org ${res.status}: ${err}` }, { status: 502 });
     }
-
     const data = await res.json();
     const finished = (data.matches ?? []).filter((m: { status: string }) => m.status === "FINISHED");
 
-    // Fetch individual match details in parallel to get goal scorers
-    const details = await Promise.all(
-      finished.map((m: { id: number }) =>
-        fetch(`${FD_BASE}/matches/${m.id}`, {
-          headers: { "X-Auth-Token": apiKey },
-          cache: "no-store",
-        })
-          .then(r => r.json())
+    // Fetch ESPN scoreboard for each date
+    const espnDates = [...new Set([dateFrom, dateTo])].map(d => d.replace(/-/g, ""));
+    type EspnEvent = { id: string; date: string; competitions: Array<{ competitors: Array<{ homeAway: string; team: { displayName: string } }> }> };
+    const espnEvents: EspnEvent[] = [];
+    const espnRaw: unknown[] = [];
+
+    await Promise.all(espnDates.map(async date => {
+      const url = `${ESPN}/scoreboard?dates=${date}`;
+      const r = await fetch(url, { cache: "no-store" }).catch(() => null);
+      if (!r) { espnRaw.push({ date, error: "fetch failed" }); return; }
+      const d = await r.json().catch(() => null);
+      espnRaw.push({ date, status: r.status, eventCount: d?.events?.length ?? 0 });
+      for (const e of d?.events ?? []) {
+        if (e.status?.type?.completed) espnEvents.push(e);
+      }
+    }));
+
+    const summaries = await Promise.all(
+      espnEvents.map(e =>
+        fetch(`${ESPN}/summary?event=${e.id}`, { cache: "no-store" })
+          .then(r => r.ok ? r.json() : null)
           .catch(() => null)
       )
     );
 
-    const goalsMap: Record<number, Goal[]> = {};
-    for (const d of details) {
-      if (d?.id && Array.isArray(d.goals)) goalsMap[d.id] = d.goals;
-    }
+    const firstSummary = summaries[0];
 
-    const results = finished
-      .map((m: {
-        id: number;
-        utcDate: string;
-        homeTeam: { id: number; name: string; shortName: string };
-        awayTeam: { id: number; name: string; shortName: string };
-        score: { fullTime: { home: number | null; away: number | null } };
-        stage: string;
-        group: string | null;
-      }) => {
-        const home = m.homeTeam.shortName ?? m.homeTeam.name;
-        const away = m.awayTeam.shortName ?? m.awayTeam.name;
-        const group = m.group
-          ? `Group ${m.group.replace(/^GROUP[_\s]*/i, "").trim()}`
-          : m.stage?.replace(/_/g, " ") ?? "";
-        const goals: Goal[] = goalsMap[m.id] ?? [];
-        const homeScorers = goals.filter(g => g.team.id === m.homeTeam.id).map(formatGoal);
-        const awayScorers = goals.filter(g => g.team.id === m.awayTeam.id).map(formatGoal);
-        return {
-          utcDate: m.utcDate,
-          time: toBST(m.utcDate),
-          home,
-          away,
-          homeScore: m.score.fullTime.home,
-          awayScore: m.score.fullTime.away,
-          homeScorers,
-          awayScorers,
-          group,
-          channel: getBroadcaster(m.homeTeam.name, m.awayTeam.name),
-        };
-      })
-      .sort((a: { utcDate: string }, b: { utcDate: string }) => b.utcDate.localeCompare(a.utcDate));
-
-    return NextResponse.json({ results });
+    return NextResponse.json({
+      _debug: {
+        espnDates,
+        espnRaw,
+        espnEventsFound: espnEvents.length,
+        firstEventTeams: espnEvents[0]?.competitions?.[0]?.competitors?.map(c => c.team.displayName),
+        firstSummaryKeys: firstSummary ? Object.keys(firstSummary) : null,
+        firstScoringPlays: firstSummary?.scoringPlays?.slice(0, 2) ?? null,
+      },
+      results: finished.map((m: { utcDate: string; homeTeam: { name: string; shortName: string }; awayTeam: { name: string; shortName: string }; score: { fullTime: { home: number | null; away: number | null } }; stage: string; group: string | null }) => ({
+        utcDate: m.utcDate,
+        time: toBST(m.utcDate),
+        home: m.homeTeam.shortName ?? m.homeTeam.name,
+        away: m.awayTeam.shortName ?? m.awayTeam.name,
+        homeScore: m.score.fullTime.home,
+        awayScore: m.score.fullTime.away,
+        homeScorers: [],
+        awayScorers: [],
+        group: m.group ? `Group ${m.group.replace(/^GROUP[_\s]*/i, "").trim()}` : m.stage?.replace(/_/g, " ") ?? "",
+        channel: getBroadcaster(m.homeTeam.name, m.awayTeam.name),
+      })),
+    });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
