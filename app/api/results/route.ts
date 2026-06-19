@@ -15,7 +15,7 @@ type Goal = {
 };
 
 function formatGoal(g: Goal): string {
-  const name = g.scorer.name.split(" ").pop() ?? g.scorer.name;
+  const name = g.scorer?.name?.split(" ").pop() ?? "?";
   const min = g.injuryTime ? `${g.minute}+${g.injuryTime}'` : `${g.minute}'`;
   const suffix = g.type === "PENALTY" ? " (P)" : g.type === "OWN_GOAL" ? " (OG)" : "";
   return `${name} ${min}${suffix}`;
@@ -43,10 +43,7 @@ export async function GET() {
 
     const res = await fetch(
       `${FD_BASE}/competitions/${WC_CODE}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=FINISHED`,
-      {
-        headers: { "X-Auth-Token": apiKey },
-        cache: "no-store",
-      }
+      { headers: { "X-Auth-Token": apiKey }, cache: "no-store" }
     );
 
     if (!res.ok) {
@@ -55,25 +52,41 @@ export async function GET() {
     }
 
     const data = await res.json();
+    const finished = (data.matches ?? []).filter((m: { status: string }) => m.status === "FINISHED");
 
-    const results = (data.matches ?? [])
+    // Fetch individual match details in parallel to get goal scorers
+    const details = await Promise.all(
+      finished.map((m: { id: number }) =>
+        fetch(`${FD_BASE}/matches/${m.id}`, {
+          headers: { "X-Auth-Token": apiKey },
+          cache: "no-store",
+        })
+          .then(r => r.json())
+          .catch(() => null)
+      )
+    );
+
+    const goalsMap: Record<number, Goal[]> = {};
+    for (const d of details) {
+      if (d?.id && Array.isArray(d.goals)) goalsMap[d.id] = d.goals;
+    }
+
+    const results = finished
       .map((m: {
+        id: number;
         utcDate: string;
-        status: string;
         homeTeam: { id: number; name: string; shortName: string };
         awayTeam: { id: number; name: string; shortName: string };
         score: { fullTime: { home: number | null; away: number | null } };
         stage: string;
         group: string | null;
-        goals: Goal[];
       }) => {
-        if (m.status !== "FINISHED") return null;
         const home = m.homeTeam.shortName ?? m.homeTeam.name;
         const away = m.awayTeam.shortName ?? m.awayTeam.name;
         const group = m.group
           ? `Group ${m.group.replace(/^GROUP[_\s]*/i, "").trim()}`
           : m.stage?.replace(/_/g, " ") ?? "";
-        const goals: Goal[] = m.goals ?? [];
+        const goals: Goal[] = goalsMap[m.id] ?? [];
         const homeScorers = goals.filter(g => g.team.id === m.homeTeam.id).map(formatGoal);
         const awayScorers = goals.filter(g => g.team.id === m.awayTeam.id).map(formatGoal);
         return {
@@ -89,8 +102,8 @@ export async function GET() {
           channel: getBroadcaster(m.homeTeam.name, m.awayTeam.name),
         };
       })
-      .filter(Boolean)
       .sort((a: { utcDate: string }, b: { utcDate: string }) => b.utcDate.localeCompare(a.utcDate));
+
     return NextResponse.json({ results });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
