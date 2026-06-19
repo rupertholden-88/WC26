@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useRef } from "react";
 import { Result } from "@/app/lib/claude";
 import { formatInTz, getTzAbbr } from "@/app/lib/timezone";
 import { Spinner, ErrorState, EmptyState, SectionLabel } from "./ui";
@@ -13,6 +14,29 @@ interface Props {
 
 export default function ResultsTab({ data, loading, error, tz }: Props) {
   const tzAbbr = getTzAbbr(tz);
+  const [heldCard, setHeldCard] = useState<number | null>(null);
+  const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startPos = useRef<{ x: number; y: number } | null>(null);
+
+  const startHold = (i: number, e: React.PointerEvent) => {
+    startPos.current = { x: e.clientX, y: e.clientY };
+    holdTimer.current = setTimeout(() => setHeldCard(i), 400);
+  };
+
+  const cancelHold = () => {
+    if (holdTimer.current) clearTimeout(holdTimer.current);
+    holdTimer.current = null;
+    setHeldCard(null);
+    startPos.current = null;
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!startPos.current) return;
+    if (Math.abs(e.clientX - startPos.current.x) > 10 || Math.abs(e.clientY - startPos.current.y) > 10) {
+      cancelHold();
+    }
+  };
+
   if (loading) return <Spinner />;
   if (error) return <ErrorState message={error} />;
 
@@ -25,10 +49,19 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
         <div className="flex flex-col gap-3">
           {data.map((r, i) => {
             const isDraw = r.homeScore === r.awayScore;
+            const isHeld = heldCard === i;
+            const hasScorers = r.homeScorers?.length > 0 || r.awayScorers?.length > 0;
             return (
               <div
                 key={i}
                 className="result-card bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-4 relative overflow-hidden"
+                style={{ userSelect: "none", touchAction: "pan-y" }}
+                onPointerDown={(e) => startHold(i, e)}
+                onPointerUp={cancelHold}
+                onPointerLeave={cancelHold}
+                onPointerCancel={cancelHold}
+                onPointerMove={onPointerMove}
+                onContextMenu={(e) => e.preventDefault()}
               >
                 {/* Green left accent stripe */}
                 <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
@@ -77,6 +110,26 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                     {r.away}
                   </span>
                 </div>
+
+                {/* Scorers panel — shown while holding */}
+                {isHeld && (
+                  <div className="flex items-start gap-3 pl-2 mt-3">
+                    <div className="flex-1 flex flex-col items-end gap-1">
+                      {r.homeScorers?.map((s, j) => (
+                        <span key={j} className="text-[11px] font-[family-name:var(--font-display)] text-[var(--text-primary)]">{s}</span>
+                      ))}
+                    </div>
+                    <div className="w-[94px] shrink-0" />
+                    <div className="flex-1 flex flex-col items-start gap-1">
+                      {r.awayScorers?.map((s, j) => (
+                        <span key={j} className="text-[11px] font-[family-name:var(--font-display)] text-[var(--text-primary)]">{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {isHeld && !hasScorers && (
+                  <p className="text-[11px] text-[var(--text-dim)] text-center mt-3">Scorers not available</p>
+                )}
 
                 {/* KO time */}
                 <p className="text-[10px] text-[var(--text-dim)] text-center mt-3 tracking-widest">
