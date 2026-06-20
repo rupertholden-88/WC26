@@ -50,7 +50,7 @@ type EspnEvent = {
   date: string;
   status: {
     displayClock?: string;
-    type: { completed: boolean; state: string; description?: string };
+    type: { completed: boolean; state: string };
   };
   competitions: Array<{ competitors: EspnCompetitor[] }>;
 };
@@ -99,8 +99,6 @@ function formatEspnGoal(ev: EspnKeyEvent): string {
 }
 
 function espnClock(e: EspnEvent): string {
-  const desc = e.status?.type?.description?.toLowerCase() ?? "";
-  if (desc.includes("half")) return "HT";
   const raw = e.status?.displayClock ?? "";
   return raw.includes(":") ? raw.split(":")[0] + "'" : raw;
 }
