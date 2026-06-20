@@ -42,12 +42,28 @@ type EspnKeyEvent = {
 type EspnCompetitor = {
   homeAway: "home" | "away";
   team: { id: string; displayName: string };
+  score?: string;
 };
 
 type EspnEvent = {
   id: string;
-  status: { type: { completed: boolean; state: string } };
+  date: string;
+  status: {
+    displayClock?: string;
+    type: { completed: boolean; state: string; description?: string };
+  };
   competitions: Array<{ competitors: EspnCompetitor[] }>;
+};
+
+type FdMatch = {
+  id: number;
+  utcDate: string;
+  homeTeam: { id: number; name: string; shortName: string };
+  awayTeam: { id: number; name: string; shortName: string };
+  score: { fullTime: { home: number | null; away: number | null } };
+  stage: string;
+  group: string | null;
+  status: string;
 };
 
 function formatEspnGoal(ev: EspnKeyEvent): string {
@@ -82,6 +98,37 @@ function formatEspnGoal(ev: EspnKeyEvent): string {
   return `${name} ${min}${isOG ? " (OG)" : ""}`.trim();
 }
 
+function espnClock(e: EspnEvent): string {
+  const desc = e.status?.type?.description?.toLowerCase() ?? "";
+  if (desc.includes("half")) return "HT";
+  const raw = e.status?.displayClock ?? "";
+  return raw.includes(":") ? raw.split(":")[0] + "'" : raw;
+}
+
+function fdGroup(m: FdMatch): string {
+  return m.group
+    ? `Group ${m.group.replace(/^GROUP[_\s]*/i, "").trim()}`
+    : m.stage?.replace(/_/g, " ") ?? "";
+}
+
+function extractScorers(
+  espnEvent: EspnEvent,
+  summaryMap: Map<string, Record<string, unknown>>
+): { homeScorers: string[]; awayScorers: string[] } {
+  const summary = summaryMap.get(espnEvent.id);
+  if (!summary) return { homeScorers: [], awayScorers: [] };
+  const comps = espnEvent.competitions?.[0]?.competitors ?? [];
+  const homeId = comps.find(c => c.homeAway === "home")?.team.id ?? comps[0]?.team.id ?? "";
+  const awayId = comps.find(c => c.homeAway === "away")?.team.id ?? comps[1]?.team.id ?? "";
+  const keyEvents = summary.keyEvents as EspnKeyEvent[] | undefined;
+  if (!Array.isArray(keyEvents)) return { homeScorers: [], awayScorers: [] };
+  const goals = keyEvents.filter(ev => ev.scoringPlay);
+  return {
+    homeScorers: goals.filter(ev => ev.team?.id === homeId).map(formatEspnGoal).filter(Boolean),
+    awayScorers: goals.filter(ev => ev.team?.id === awayId).map(formatEspnGoal).filter(Boolean),
+  };
+}
+
 export async function GET() {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) {
@@ -94,8 +141,9 @@ export async function GET() {
     const dateFrom = since.toISOString().split("T")[0];
     const dateTo = now.toISOString().split("T")[0];
 
+    // Fetch all FD matches in window (finished + live)
     const fdRes = await fetch(
-      `${FD_BASE}/competitions/${WC_CODE}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&status=FINISHED`,
+      `${FD_BASE}/competitions/${WC_CODE}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`,
       { headers: { "X-Auth-Token": apiKey }, cache: "no-store" }
     );
     if (!fdRes.ok) {
@@ -103,12 +151,16 @@ export async function GET() {
       return NextResponse.json({ error: `football-data.org ${fdRes.status}: ${err}` }, { status: 502 });
     }
     const fdData = await fdRes.json();
-    const finished = (fdData.matches ?? []).filter((m: { status: string }) => m.status === "FINISHED");
+    const allFdMatches: FdMatch[] = fdData.matches ?? [];
+    const fdFinished = allFdMatches.filter(m => m.status === "FINISHED");
+    const fdLive = allFdMatches.filter(m => m.status === "IN_PLAY" || m.status === "PAUSED");
 
-    // Fetch ESPN scoreboard for each unique date in the window (plus one extra day for timezone edge cases)
+    // Fetch ESPN scoreboard for each unique date in the window
     const dayBefore = new Date(since.getTime() - 24 * 60 * 60 * 1000).toISOString().split("T")[0];
     const espnDates = [...new Set([dayBefore, dateFrom, dateTo])].map(d => d.replace(/-/g, ""));
-    const espnEvents: EspnEvent[] = [];
+    const completedEspnEvents: EspnEvent[] = [];
+    const liveEspnEvents: EspnEvent[] = [];
+
     await Promise.all(
       espnDates.map(async date => {
         const r = await fetch(`${ESPN_BASE}/scoreboard?dates=${date}`, { cache: "no-store" }).catch(() => null);
@@ -116,16 +168,18 @@ export async function GET() {
         const d = await r.json().catch(() => null);
         for (const e of d?.events ?? []) {
           if (e.status?.type?.completed || e.status?.type?.state === "post") {
-            espnEvents.push(e);
+            completedEspnEvents.push(e);
+          } else if (e.status?.type?.state === "in") {
+            liveEspnEvents.push(e);
           }
         }
       })
     );
 
-    // Fetch ESPN summaries in parallel
+    // Fetch ESPN summaries for all events in parallel
     const summaryMap = new Map<string, Record<string, unknown>>();
     await Promise.all(
-      espnEvents.map(async e => {
+      [...completedEspnEvents, ...liveEspnEvents].map(async e => {
         const r = await fetch(`${ESPN_BASE}/summary?event=${e.id}`, { cache: "no-store" }).catch(() => null);
         if (!r?.ok) return;
         const s = await r.json().catch(() => null);
@@ -133,69 +187,62 @@ export async function GET() {
       })
     );
 
-    // Match each FD result to an ESPN event, then extract scorers from keyEvents
-    type Scorers = { homeScorers: string[]; awayScorers: string[] };
-    const scorersMap = new Map<number, Scorers>();
-
-    for (const m of finished) {
-      const espnEvent = espnEvents.find(e => {
+    // Build finished results
+    const finishedResults = fdFinished.map(m => {
+      const espnEvent = completedEspnEvents.find(e => {
         const comps = e.competitions?.[0]?.competitors ?? [];
-        const espnHome = comps.find((c: EspnCompetitor) => c.homeAway === "home")?.team.displayName ?? "";
-        const espnAway = comps.find((c: EspnCompetitor) => c.homeAway === "away")?.team.displayName ?? "";
-        return teamsMatch(m.homeTeam.name, espnHome) && teamsMatch(m.awayTeam.name, espnAway);
+        const eh = comps.find((c: EspnCompetitor) => c.homeAway === "home")?.team.displayName ?? "";
+        const ea = comps.find((c: EspnCompetitor) => c.homeAway === "away")?.team.displayName ?? "";
+        return teamsMatch(m.homeTeam.name, eh) && teamsMatch(m.awayTeam.name, ea);
       });
-      if (!espnEvent) continue;
+      const { homeScorers = [], awayScorers = [] } = espnEvent
+        ? extractScorers(espnEvent, summaryMap)
+        : {};
+      return {
+        utcDate: m.utcDate,
+        time: toBST(m.utcDate),
+        home: m.homeTeam.shortName ?? m.homeTeam.name,
+        away: m.awayTeam.shortName ?? m.awayTeam.name,
+        homeScore: m.score.fullTime.home ?? 0,
+        awayScore: m.score.fullTime.away ?? 0,
+        homeScorers,
+        awayScorers,
+        group: fdGroup(m),
+        channel: getBroadcaster(m.homeTeam.name, m.awayTeam.name),
+        status: "FINISHED" as const,
+      };
+    }).sort((a, b) => b.utcDate.localeCompare(a.utcDate));
 
-      const summary = summaryMap.get(espnEvent.id);
-      if (!summary) continue;
+    // Build live results from ESPN data (use FD for names/group when matched)
+    const liveResults = liveEspnEvents.map(e => {
+      const comps = e.competitions?.[0]?.competitors ?? [];
+      const homeComp = comps.find(c => c.homeAway === "home") ?? comps[0];
+      const awayComp = comps.find(c => c.homeAway === "away") ?? comps[1];
+      const espnHome = homeComp?.team.displayName ?? "";
+      const espnAway = awayComp?.team.displayName ?? "";
 
-      const comps = espnEvent.competitions?.[0]?.competitors ?? [];
-      // Fall back to index order if homeAway field is missing
-      const homeId = comps.find((c: EspnCompetitor) => c.homeAway === "home")?.team.id ?? comps[0]?.team.id ?? "";
-      const awayId = comps.find((c: EspnCompetitor) => c.homeAway === "away")?.team.id ?? comps[1]?.team.id ?? "";
+      const fdMatch = fdLive.find(m =>
+        teamsMatch(m.homeTeam.name, espnHome) && teamsMatch(m.awayTeam.name, espnAway)
+      );
 
-      const keyEvents = summary.keyEvents as EspnKeyEvent[] | undefined;
-      if (!Array.isArray(keyEvents)) continue;
+      const { homeScorers, awayScorers } = extractScorers(e, summaryMap);
+      return {
+        utcDate: fdMatch?.utcDate ?? e.date ?? "",
+        time: toBST(fdMatch?.utcDate ?? e.date ?? ""),
+        home: fdMatch?.homeTeam.shortName ?? fdMatch?.homeTeam.name ?? espnHome,
+        away: fdMatch?.awayTeam.shortName ?? fdMatch?.awayTeam.name ?? espnAway,
+        homeScore: parseInt(homeComp?.score ?? "0") || 0,
+        awayScore: parseInt(awayComp?.score ?? "0") || 0,
+        homeScorers,
+        awayScorers,
+        group: fdMatch ? fdGroup(fdMatch) : "",
+        channel: getBroadcaster(fdMatch?.homeTeam.name ?? espnHome, fdMatch?.awayTeam.name ?? espnAway),
+        status: "LIVE" as const,
+        clock: espnClock(e),
+      };
+    });
 
-      const goals = keyEvents.filter(e => e.scoringPlay);
-      scorersMap.set(m.id, {
-        homeScorers: goals.filter(e => e.team?.id === homeId).map(formatEspnGoal).filter(Boolean),
-        awayScorers: goals.filter(e => e.team?.id === awayId).map(formatEspnGoal).filter(Boolean),
-      });
-    }
-
-    const results = finished
-      .map((m: {
-        id: number;
-        utcDate: string;
-        homeTeam: { id: number; name: string; shortName: string };
-        awayTeam: { id: number; name: string; shortName: string };
-        score: { fullTime: { home: number | null; away: number | null } };
-        stage: string;
-        group: string | null;
-      }) => {
-        const home = m.homeTeam.shortName ?? m.homeTeam.name;
-        const away = m.awayTeam.shortName ?? m.awayTeam.name;
-        const group = m.group
-          ? `Group ${m.group.replace(/^GROUP[_\s]*/i, "").trim()}`
-          : m.stage?.replace(/_/g, " ") ?? "";
-        const { homeScorers = [], awayScorers = [] } = scorersMap.get(m.id) ?? {};
-        return {
-          utcDate: m.utcDate,
-          time: toBST(m.utcDate),
-          home,
-          away,
-          homeScore: m.score.fullTime.home,
-          awayScore: m.score.fullTime.away,
-          homeScorers,
-          awayScorers,
-          group,
-          channel: getBroadcaster(m.homeTeam.name, m.awayTeam.name),
-        };
-      })
-      .sort((a: { utcDate: string }, b: { utcDate: string }) => b.utcDate.localeCompare(a.utcDate));
-
-    return NextResponse.json({ results });
+    return NextResponse.json({ results: [...liveResults, ...finishedResults] });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }

@@ -47,6 +47,8 @@ export interface Result {
   awayScorers: string[];
   group: string;
   channel: "ITV" | "BBC";
+  status?: "FINISHED" | "LIVE";
+  clock?: string;
 }
 
 async function apiFetch<T>(path: string): Promise<T> {
