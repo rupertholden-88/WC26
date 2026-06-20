@@ -16,12 +16,15 @@ function toBST(utcStr: string): string {
 }
 
 function normalize(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+const ALIASES: Record<string, string> = { turkiye: "turkey" };
+function canonical(s: string): string { return ALIASES[s] ?? s; }
+
 function teamsMatch(a: string, b: string): boolean {
-  const an = normalize(a);
-  const bn = normalize(b);
+  const an = canonical(normalize(a));
+  const bn = canonical(normalize(b));
   return an === bn || (an.length > 3 && bn.includes(an)) || (bn.length > 3 && an.includes(bn));
 }
 
