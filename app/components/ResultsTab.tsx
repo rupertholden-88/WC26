@@ -25,16 +25,31 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
       ) : (
         <div className="flex flex-col gap-3">
           {data.map((r, i) => {
+            const isLive = r.status === "LIVE";
             const isDraw = r.homeScore === r.awayScore;
             const hasScorers = r.homeScorers?.length > 0 || r.awayScorers?.length > 0;
+
+            const stripeStyle = isLive
+              ? "bg-gradient-to-b from-orange-400 via-orange-700 to-transparent"
+              : undefined;
+            const stripeInline = isLive
+              ? undefined
+              : { background: "linear-gradient(to bottom, var(--green), var(--green-mid), transparent)" };
+
+            const cardClass = isLive
+              ? "bg-[var(--bg-live)] border-[var(--border-live)]"
+              : "bg-[var(--bg-card)] border-[var(--border)]";
+
             return (
               <div
                 key={i}
-                className="result-card bg-[var(--bg-card)] border border-[var(--border)] rounded-xl px-4 py-4 relative overflow-hidden"
+                className={`result-card border rounded-xl px-4 py-4 relative overflow-hidden ${cardClass}`}
               >
-                {/* Green left accent stripe */}
-                <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
-                     style={{ background: "linear-gradient(to bottom, var(--green), var(--green-mid), transparent)" }} />
+                {/* Left accent stripe */}
+                <div
+                  className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${stripeStyle ?? ""}`}
+                  style={stripeInline}
+                />
 
                 {/* Group row */}
                 <div className="flex items-center justify-between mb-3 pl-2">
@@ -42,6 +57,11 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                                  tracking-[0.16em] uppercase text-[var(--text-dim)]">
                     {r.group}
                   </p>
+                  {isLive && (
+                    <span className="text-orange-400 font-semibold tracking-widest uppercase text-[9px] font-[family-name:var(--font-display)]">
+                      ● Live{r.clock ? ` · ${r.clock}` : ""}
+                    </span>
+                  )}
                 </div>
 
                 {/* Score row */}
@@ -56,7 +76,7 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                                      score-digit text-[20px] font-bold font-[family-name:var(--font-display)]
                                      ${!isDraw && r.homeScore > r.awayScore
                                        ? "bg-[var(--accent)] text-[#080e1a]"
-                                       : "bg-[var(--bg-mid)] text-[var(--text-primary)] border border-[var(--border)]"}`}>
+                                       : "bg-[var(--bg-mid)] text-[var(--text-primary)] border border-[var(--border)]"}` }>
                       {r.homeScore}
                     </div>
                     <div className="w-5 h-9 flex items-center justify-center bg-[var(--bg-mid)] border-y border-[var(--border)]">
@@ -66,7 +86,7 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                                      score-digit text-[20px] font-bold font-[family-name:var(--font-display)]
                                      ${!isDraw && r.awayScore > r.homeScore
                                        ? "bg-[var(--accent)] text-[#080e1a]"
-                                       : "bg-[var(--bg-mid)] text-[var(--text-primary)] border border-[var(--border)]"}`}>
+                                       : "bg-[var(--bg-mid)] text-[var(--text-primary)] border border-[var(--border)]"}` }>
                       {r.awayScore}
                     </div>
                   </div>
@@ -94,11 +114,19 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                   </div>
                 )}
 
-                {/* KO time */}
+                {/* Footer */}
                 <p className="text-[10px] text-[var(--text-dim)] text-center mt-3 tracking-widest">
-                  {isDraw ? "DRAW" : r.homeScore > r.awayScore ? r.home.toUpperCase() + " WIN" : r.away.toUpperCase() + " WIN"}
-                  <span className="mx-2 text-[var(--border)]">·</span>
-                  {r.utcDate ? formatInTz(r.utcDate, tz) : r.time} {tzAbbr}
+                  {isLive ? (
+                    <span className="text-orange-400">
+                      ● LIVE{r.clock ? ` · ${r.clock}` : ""}
+                    </span>
+                  ) : (
+                    <>
+                      {isDraw ? "DRAW" : r.homeScore > r.awayScore ? r.home.toUpperCase() + " WIN" : r.away.toUpperCase() + " WIN"}
+                      <span className="mx-2 text-[var(--border)]">·</span>
+                      {r.utcDate ? formatInTz(r.utcDate, tz) : r.time} {tzAbbr}
+                    </>
+                  )}
                 </p>
               </div>
             );
