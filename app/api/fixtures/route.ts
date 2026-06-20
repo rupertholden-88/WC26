@@ -81,7 +81,9 @@ export async function GET() {
     const dateTo = new Date(now);
     dateTo.setDate(dateTo.getDate() + 2);
 
-    const espnDates = [...new Set([dateFrom, toDateStr(dateTo)])].map(d => d.replace(/-/g, ""));
+    const dayMid = new Date(now);
+    dayMid.setDate(dayMid.getDate() + 1);
+    const espnDates = [...new Set([dateFrom, toDateStr(dayMid), toDateStr(dateTo)])].map(d => d.replace(/-/g, ""));
 
     const [fdRes, ...espnResults] = await Promise.all([
       fetch(
