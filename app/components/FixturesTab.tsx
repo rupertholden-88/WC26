@@ -68,11 +68,6 @@ function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
   const href = f.channel === "ITV" ? ITV_URL : BBC_URL;
   const hasProbs = f.status === "UPCOMING" && f.homeProb != null && f.drawProb != null && f.awayProb != null;
 
-  const stripeColour =
-    f.status === "FINISHED" ? "bg-gradient-to-b from-red-600 via-red-900 to-transparent"
-    : f.status === "LIVE"   ? "bg-gradient-to-b from-orange-400 via-orange-700 to-transparent"
-    :                         "";
-
   const cardBg =
     f.status === "FINISHED" ? "bg-[var(--bg-finished)] border-[var(--border-dim)]"
     : f.status === "LIVE"   ? "bg-[var(--bg-live)] border-[var(--border-live)]"
@@ -84,19 +79,13 @@ function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
       target="_blank"
       rel="noopener noreferrer"
       className={`card-glow flex flex-col border rounded-xl
-                 px-4 py-3.5 transition-all duration-200 no-underline group relative overflow-hidden
+                 px-4 py-3.5 transition-all duration-200 no-underline group
                  ${cardBg}`}
     >
-      {/* Left accent stripe — status colour */}
-      <div
-        className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${stripeColour}`}
-        style={!stripeColour ? { background: "linear-gradient(to bottom, var(--green), var(--green-mid), transparent)" } : undefined}
-      />
-
       {/* Main row */}
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Status dot + Time */}
-        <div className="shrink-0 w-[60px] pl-2 flex items-center gap-2">
+        <div className="shrink-0 w-[60px] flex items-center gap-2">
           <StatusDot status={f.status} />
           <span className={`font-[family-name:var(--font-display)] text-[13px] font-medium tabular-nums
                             ${f.status === "FINISHED" ? "text-red-600 line-through decoration-red-800"
@@ -129,7 +118,7 @@ function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
 
       {/* Win probability bar */}
       {hasProbs && (
-        <div className="pl-2 pr-1">
+        <div className="pr-1">
           <ProbBar home={f.homeProb!} draw={f.drawProb!} away={f.awayProb!} />
         </div>
       )}
