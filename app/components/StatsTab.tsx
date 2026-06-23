@@ -63,8 +63,7 @@ function PlayerModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pt-4"
-      style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
