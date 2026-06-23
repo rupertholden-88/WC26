@@ -200,8 +200,8 @@ export default function Dashboard() {
             <button
               key={id}
               onClick={() => navigateToTab(id)}
-              className={`relative font-[family-name:var(--font-display)] text-[12px] sm:text-[13px] font-semibold
-                          tracking-[0.1em] uppercase px-3 sm:px-4 py-3 transition-colors duration-150 cursor-pointer whitespace-nowrap
+              className={`relative font-[family-name:var(--font-display)] text-[10px] sm:text-[13px] font-semibold
+                          tracking-[0.06em] sm:tracking-[0.1em] uppercase px-2.5 sm:px-4 py-3 transition-colors duration-150 cursor-pointer whitespace-nowrap
                           ${tab === id
                             ? "text-[var(--accent)] tab-active"
                             : "text-[var(--text-dim)] hover:text-[var(--text-secondary)]"
