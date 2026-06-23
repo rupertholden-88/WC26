@@ -202,6 +202,7 @@ export default function StatsTab({ data, loading, error }: Props) {
                           ${isTop3
                             ? "bg-[var(--bg-card)] border-[var(--border)]"
                             : "bg-[var(--bg-finished)] border-[var(--border-dim)]"}`}
+              onContextMenu={e => e.preventDefault()}
               onMouseDown={() => startPress(s.name)}
               onMouseUp={cancelPress}
               onMouseLeave={cancelPress}
@@ -211,6 +212,7 @@ export default function StatsTab({ data, loading, error }: Props) {
                 if (didLongPress.current) e.preventDefault();
               }}
               onTouchMove={cancelPress}
+              onTouchCancel={cancelPress}
               onClick={e => {
                 if (didLongPress.current) {
                   e.preventDefault();
