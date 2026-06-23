@@ -36,6 +36,17 @@ export interface Fixture {
   awayProb?: number;
 }
 
+export interface TopScorer {
+  name: string;
+  nationality: string;
+  team: string;
+  teamCrest: string;
+  goals: number;
+  assists: number;
+  penalties: number;
+  playedMatches: number;
+}
+
 export interface Result {
   time: string;
   utcDate: string;
@@ -76,4 +87,9 @@ export async function fetchFixtures(): Promise<Fixture[]> {
 export async function fetchResults(): Promise<Result[]> {
   const data = await apiFetch<{ results: Result[] }>("/api/results");
   return data.results ?? [];
+}
+
+export async function fetchScorers(): Promise<TopScorer[]> {
+  const data = await apiFetch<{ scorers: TopScorer[] }>("/api/scorers");
+  return data.scorers ?? [];
 }

@@ -1,20 +1,22 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { VideoResult, GroupStanding, Fixture, Result, fetchVideos, fetchStandings, fetchFixtures, fetchResults } from "@/app/lib/claude";
+import { VideoResult, GroupStanding, Fixture, Result, TopScorer, fetchVideos, fetchStandings, fetchFixtures, fetchResults, fetchScorers } from "@/app/lib/claude";
 import { getStoredTz, DEFAULT_TZ } from "@/app/lib/timezone";
 import VideosTab from "./VideosTab";
 import StandingsTab from "./StandingsTab";
 import FixturesTab from "./FixturesTab";
 import ResultsTab from "./ResultsTab";
+import StatsTab from "./StatsTab";
 
-type Tab = "videos" | "results" | "standings" | "fixtures";
+type Tab = "videos" | "results" | "standings" | "fixtures" | "stats";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "videos",    label: "Highlights", icon: "▶" },
-  { id: "results",    label: "Results",    icon: "⚽" },
-  { id: "standings", label: "Standings",       icon: "⊞" },
-  { id: "fixtures",  label: "Fixtures",        icon: "⊟" },
+  { id: "results",   label: "Results",    icon: "⚽" },
+  { id: "standings", label: "Standings",  icon: "⊞" },
+  { id: "fixtures",  label: "Fixtures",   icon: "⊟" },
+  { id: "stats",     label: "Stats",      icon: "★" },
 ];
 
 const TAB_IDS = TABS.map(t => t.id);
@@ -63,6 +65,7 @@ export default function Dashboard() {
   const [standing, setStanding] = useState<DataState<GroupStanding[]>>(initial());
   const [fixtures, setFixtures] = useState<DataState<Fixture[]>>(initial());
   const [results,  setResults]  = useState<DataState<Result[]>>(initial());
+  const [scorers,  setScorers]  = useState<DataState<TopScorer[]>>(initial());
 
   const loadVideos = useCallback(async () => {
     setVideos(s => ({ ...s, loading: true, error: null }));
@@ -104,9 +107,19 @@ export default function Dashboard() {
     }
   }, []);
 
+  const loadScorers = useCallback(async () => {
+    setScorers(s => ({ ...s, loading: true, error: null }));
+    try {
+      const data = await fetchScorers();
+      setScorers({ data, loading: false, error: null });
+    } catch (e) {
+      setScorers({ data: null, loading: false, error: `Failed to load stats: ${(e as Error).message}` });
+    }
+  }, []);
+
   const loadAll = useCallback(async () => {
-    await Promise.all([loadVideos(), loadResults(), loadStandings(), loadFixtures()]);
-  }, [loadVideos, loadResults, loadStandings, loadFixtures]);
+    await Promise.all([loadVideos(), loadResults(), loadStandings(), loadFixtures(), loadScorers()]);
+  }, [loadVideos, loadResults, loadStandings, loadFixtures, loadScorers]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
@@ -207,6 +220,7 @@ export default function Dashboard() {
         {tab === "standings" && <StandingsTab data={standing.data} loading={standing.loading} error={standing.error} />}
         {tab === "results"   && <ResultsTab   data={results.data}  loading={results.loading}  error={results.error}  tz={tz} />}
         {tab === "fixtures"  && <FixturesTab  data={fixtures.data} loading={fixtures.loading} error={fixtures.error} tz={tz} />}
+        {tab === "stats"     && <StatsTab     data={scorers.data}  loading={scorers.loading}  error={scorers.error} />}
       </div>
     </div>
   );
