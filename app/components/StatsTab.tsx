@@ -66,7 +66,8 @@ function PlayerModal({
     >
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div
-        className="relative z-10 bg-[var(--bg-card)] border-2 border-[var(--accent)] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl"
+        className="relative z-10 bg-[var(--bg-card)] border-2 border-[var(--accent)] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl select-none"
+        style={{ WebkitUserSelect: "none" } as React.CSSProperties}
         onClick={e => e.stopPropagation()}
       >
         {wikiLoading ? (
