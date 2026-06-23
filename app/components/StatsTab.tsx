@@ -84,7 +84,7 @@ function PlayerModal({
               <img
                 src={wiki.thumbnail}
                 alt={wiki.title}
-                className="w-full h-auto rounded-t-2xl"
+                className="w-1/2 h-auto rounded-xl mx-auto block mt-5"
               />
             )}
             <div className="p-5">
