@@ -18,7 +18,6 @@ interface WikiSummary {
 
 async function fetchWikiSummary(name: string): Promise<WikiSummary | null> {
   try {
-    // Try direct lookup first (works when name matches article title)
     const direct = await fetch(
       `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}`,
       { headers: { Accept: "application/json" } }
@@ -30,7 +29,6 @@ async function fetchWikiSummary(name: string): Promise<WikiSummary | null> {
       }
     }
 
-    // Fall back to search API
     const search = await fetch(
       `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(name + " footballer")}&format=json&origin=*&srlimit=1`
     );
@@ -62,10 +60,14 @@ function PlayerModal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pt-4"
+      style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div
-        className="relative bg-[var(--bg-card)] border border-[var(--border)] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl"
+        className="relative z-10 bg-[var(--bg-card)] border-2 border-[var(--accent)] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         {wikiLoading ? (
