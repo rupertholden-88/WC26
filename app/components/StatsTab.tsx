@@ -18,6 +18,7 @@ interface WikiSummary {
 
 async function fetchWikiSummary(name: string): Promise<WikiSummary | null> {
   try {
+    // Try direct lookup first (works when name matches article title)
     const direct = await fetch(
       `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(name)}`,
       { headers: { Accept: "application/json" } }
@@ -29,6 +30,7 @@ async function fetchWikiSummary(name: string): Promise<WikiSummary | null> {
       }
     }
 
+    // Fall back to search API
     const search = await fetch(
       `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(name + " footballer")}&format=json&origin=*&srlimit=1`
     );
@@ -119,6 +121,24 @@ function PlayerModal({
   );
 }
 
+function BootIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 14"
+      fill="currentColor"
+      className="w-5 h-5"
+      aria-hidden="true"
+      style={{ display: "inline-block" }}
+    >
+      <path d="M0 0h4v8h9q3 0 3 3v1H0V0z"/>
+      <rect x="1" y="12" width="1.5" height="1.5" rx="0.4"/>
+      <rect x="5" y="12" width="1.5" height="1.5" rx="0.4"/>
+      <rect x="9" y="12" width="1.5" height="1.5" rx="0.4"/>
+      <rect x="13" y="12" width="1.5" height="1.5" rx="0.4"/>
+    </svg>
+  );
+}
+
 function getMedalColour(rank: number): string {
   if (rank === 1) return "text-yellow-400";
   if (rank === 2) return "text-slate-300";
@@ -126,10 +146,8 @@ function getMedalColour(rank: number): string {
   return "text-[var(--text-faint)]";
 }
 
-function getRankLabel(rank: number): string {
-  if (rank === 1) return "🥇";
-  if (rank === 2) return "🥈";
-  if (rank === 3) return "🥉";
+function getRankLabel(rank: number): React.ReactNode {
+  if (rank <= 3) return <BootIcon />;
   return String(rank);
 }
 
@@ -155,6 +173,9 @@ export default function StatsTab({ data, loading, error }: Props) {
     setWikiLoading(false);
   }, []);
 
+  // Guard: ignore close events that arrive within 400ms of the modal opening.
+  // Android fires a synthetic click on the backdrop the instant the finger lifts,
+  // which would otherwise close the modal before the user sees it.
   const closeModal = useCallback(() => {
     if (Date.now() - modalOpenedAt.current < 400) return;
     setModalPlayer(null);
@@ -194,105 +215,110 @@ export default function StatsTab({ data, loading, error }: Props) {
 
   return (
     <>
-      <div className="fadein">
-        <SectionLabel>Top Scorers · Golden Boot</SectionLabel>
-        <p className="text-[11px] text-[var(--text-faint)] mb-4">Long-press any player for their Wikipedia bio.</p>
+    <div className="fadein">
+      <SectionLabel>Top Scorers · Golden Boot</SectionLabel>
+      <p className="text-[11px] text-[var(--text-faint)] mb-4">Long-press any player for their Wikipedia bio.</p>
 
-        <div className="flex flex-col gap-2">
-          {data.map((s, i) => {
-            if (s.goals !== prevGoals) {
-              rank = i + 1;
-              prevGoals = s.goals;
-            }
+      <div className="flex flex-col gap-2">
+        {data.map((s, i) => {
+          if (s.goals !== prevGoals) {
+            rank = i + 1;
+            prevGoals = s.goals;
+          }
 
-            const isTop3 = rank <= 3;
-            const wikiUrl = `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(s.name)}&go=Go`;
+          const isTop3 = rank <= 3;
+          const wikiUrl = `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(s.name)}&go=Go`;
 
-            return (
-              <div
-                key={i}
-                role="link"
-                tabIndex={0}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors cursor-pointer
-                            hover:border-[var(--accent)] group select-none
-                            ${isTop3
-                              ? "bg-[var(--bg-card)] border-[var(--border)]"
-                              : "bg-[var(--bg-finished)] border-[var(--border-dim)]"}`}
-                style={{ WebkitTouchCallout: "none" } as React.CSSProperties}
-                onMouseDown={() => startPress(s.name, 0, 0)}
-                onMouseUp={cancelPress}
-                onMouseLeave={cancelPress}
-                onTouchStart={e => startPress(s.name, e.touches[0].clientX, e.touches[0].clientY)}
-                onTouchEnd={cancelPress}
-                onTouchMove={cancelPressIfMoved}
-                onTouchCancel={cancelPress}
-                onClick={() => {
-                  if (!didLongPress.current) {
-                    window.open(wikiUrl, "_blank", "noopener,noreferrer");
-                  }
-                  didLongPress.current = false;
-                }}
-              >
-                <div className={`shrink-0 w-7 text-center font-[family-name:var(--font-display)] font-bold text-[13px]
-                                 ${getMedalColour(rank)}`}>
-                  {rank <= 3 ? getRankLabel(rank) : rank}
-                </div>
-
-                {s.teamCrest ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={s.teamCrest} alt={s.team} className="shrink-0 w-6 h-6 object-contain" />
-                ) : (
-                  <div className="shrink-0 w-6 h-6 rounded-full bg-[var(--bg-mid)]" />
-                )}
-
-                <div className="flex-1 min-w-0">
-                  <p className="font-[family-name:var(--font-display)] text-[14px] font-semibold text-[var(--text-primary)] leading-tight truncate group-hover:text-[var(--accent)] transition-colors">
-                    {s.name}
-                  </p>
-                  <p className="text-[11px] text-[var(--text-dim)] mt-0.5">
-                    {s.team}{s.nationality ? ` · ${s.nationality}` : ""}
-                  </p>
-                </div>
-
-                <div className="shrink-0 flex items-center gap-4">
-                  <div className="text-center">
-                    <p className={`font-[family-name:var(--font-display)] text-[20px] font-bold tabular-nums leading-none
-                                   ${isTop3 ? "text-[var(--accent)]" : "text-[var(--text-primary)]"}`}>
-                      {s.goals}
-                    </p>
-                    <p className="text-[9px] text-[var(--text-faint)] tracking-widest uppercase mt-0.5">Goals</p>
-                  </div>
-                  {s.assists > 0 && (
-                    <div className="text-center">
-                      <p className="font-[family-name:var(--font-display)] text-[16px] font-semibold tabular-nums leading-none text-[var(--text-dim)]">
-                        {s.assists}
-                      </p>
-                      <p className="text-[9px] text-[var(--text-faint)] tracking-widest uppercase mt-0.5">Ast</p>
-                    </div>
-                  )}
-                  {s.penalties > 0 && (
-                    <div className="text-center">
-                      <p className="font-[family-name:var(--font-display)] text-[13px] font-medium tabular-nums leading-none text-[var(--text-faint)]">
-                        ({s.penalties})
-                      </p>
-                      <p className="text-[9px] text-[var(--text-faint)] tracking-widest uppercase mt-0.5">Pen</p>
-                    </div>
-                  )}
-                </div>
+          return (
+            <div
+              key={i}
+              role="link"
+              tabIndex={0}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors cursor-pointer
+                          hover:border-[var(--accent)] group select-none
+                          ${isTop3
+                            ? "bg-[var(--bg-card)] border-[var(--border)]"
+                            : "bg-[var(--bg-finished)] border-[var(--border-dim)]"}`}
+              style={{ WebkitTouchCallout: "none" } as React.CSSProperties}
+              onMouseDown={() => startPress(s.name, 0, 0)}
+              onMouseUp={cancelPress}
+              onMouseLeave={cancelPress}
+              onTouchStart={e => startPress(s.name, e.touches[0].clientX, e.touches[0].clientY)}
+              onTouchEnd={cancelPress}
+              onTouchMove={cancelPressIfMoved}
+              onTouchCancel={cancelPress}
+              onClick={() => {
+                if (!didLongPress.current) {
+                  window.open(wikiUrl, "_blank", "noopener,noreferrer");
+                }
+                didLongPress.current = false;
+              }}
+            >
+              {/* Rank */}
+              <div className={`shrink-0 w-7 text-center font-[family-name:var(--font-display)] font-bold text-[13px]
+                               ${getMedalColour(rank)}`}>
+                {rank <= 3 ? getRankLabel(rank) : rank}
               </div>
-            );
-          })}
-        </div>
+
+              {/* Team crest */}
+              {s.teamCrest ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={s.teamCrest} alt={s.team} className="shrink-0 w-6 h-6 object-contain" />
+              ) : (
+                <div className="shrink-0 w-6 h-6 rounded-full bg-[var(--bg-mid)]" />
+              )}
+
+              {/* Name + team */}
+              <div className="flex-1 min-w-0">
+                <p className="font-[family-name:var(--font-display)] text-[14px] font-semibold text-[var(--text-primary)] leading-tight truncate group-hover:text-[var(--accent)] transition-colors">
+                  {s.name}
+                </p>
+                <p className="text-[11px] text-[var(--text-dim)] mt-0.5">
+                  {s.team}{s.nationality ? ` · ${s.nationality}` : ""}
+                </p>
+              </div>
+
+              {/* Stats */}
+              <div className="shrink-0 flex items-center gap-4">
+                <div className="text-center">
+                  <p className={`font-[family-name:var(--font-display)] text-[20px] font-bold tabular-nums leading-none
+                                 ${isTop3 ? "text-[var(--accent)]" : "text-[var(--text-primary)]"}`}>
+                    {s.goals}
+                  </p>
+                  <p className="text-[9px] text-[var(--text-faint)] tracking-widest uppercase mt-0.5">Goals</p>
+                </div>
+                {s.assists > 0 && (
+                  <div className="text-center">
+                    <p className="font-[family-name:var(--font-display)] text-[16px] font-semibold tabular-nums leading-none text-[var(--text-dim)]">
+                      {s.assists}
+                    </p>
+                    <p className="text-[9px] text-[var(--text-faint)] tracking-widest uppercase mt-0.5">Ast</p>
+                  </div>
+                )}
+                {s.penalties > 0 && (
+                  <div className="text-center">
+                    <p className="font-[family-name:var(--font-display)] text-[13px] font-medium tabular-nums leading-none text-[var(--text-faint)]">
+                      ({s.penalties})
+                    </p>
+                    <p className="text-[9px] text-[var(--text-faint)] tracking-widest uppercase mt-0.5">Pen</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {modalPlayer && (
-        <PlayerModal
-          player={modalPlayer}
-          wiki={wiki}
-          wikiLoading={wikiLoading}
-          onClose={closeModal}
-        />
-      )}
+    </div>
+
+    {modalPlayer && (
+      <PlayerModal
+        player={modalPlayer}
+        wiki={wiki}
+        wikiLoading={wikiLoading}
+        onClose={closeModal}
+      />
+    )}
     </>
   );
 }
