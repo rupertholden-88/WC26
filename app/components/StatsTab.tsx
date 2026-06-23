@@ -132,6 +132,7 @@ function getRankLabel(rank: number): string {
 }
 
 const LONG_PRESS_MS = 550;
+const MOVE_THRESHOLD = 10;
 
 export default function StatsTab({ data, loading, error }: Props) {
   const [modalPlayer, setModalPlayer] = useState<string | null>(null);
@@ -139,8 +140,11 @@ export default function StatsTab({ data, loading, error }: Props) {
   const [wikiLoading, setWikiLoading] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPress = useRef(false);
+  const touchOrigin = useRef<{ x: number; y: number } | null>(null);
+  const modalOpenedAt = useRef(0);
 
   const openModal = useCallback(async (name: string) => {
+    modalOpenedAt.current = Date.now();
     setModalPlayer(name);
     setWiki(null);
     setWikiLoading(true);
@@ -149,25 +153,38 @@ export default function StatsTab({ data, loading, error }: Props) {
     setWikiLoading(false);
   }, []);
 
+  // Guard: ignore close events that arrive within 400ms of the modal opening.
+  // Android fires a synthetic click on the backdrop the instant the finger lifts,
+  // which would otherwise close the modal before the user sees it.
   const closeModal = useCallback(() => {
+    if (Date.now() - modalOpenedAt.current < 400) return;
     setModalPlayer(null);
     setWiki(null);
   }, []);
-
-  const startPress = useCallback((name: string) => {
-    didLongPress.current = false;
-    pressTimer.current = setTimeout(() => {
-      didLongPress.current = true;
-      openModal(name);
-    }, LONG_PRESS_MS);
-  }, [openModal]);
 
   const cancelPress = useCallback(() => {
     if (pressTimer.current) {
       clearTimeout(pressTimer.current);
       pressTimer.current = null;
     }
+    touchOrigin.current = null;
   }, []);
+
+  const startPress = useCallback((name: string, x: number, y: number) => {
+    didLongPress.current = false;
+    touchOrigin.current = { x, y };
+    pressTimer.current = setTimeout(() => {
+      didLongPress.current = true;
+      openModal(name);
+    }, LONG_PRESS_MS);
+  }, [openModal]);
+
+  const cancelPressIfMoved = useCallback((e: React.TouchEvent) => {
+    if (!touchOrigin.current) return;
+    const dx = e.touches[0].clientX - touchOrigin.current.x;
+    const dy = e.touches[0].clientY - touchOrigin.current.y;
+    if (Math.sqrt(dx * dx + dy * dy) > MOVE_THRESHOLD) cancelPress();
+  }, [cancelPress]);
 
   if (loading) return <Spinner />;
   if (error) return <ErrorState message={error} />;
@@ -202,15 +219,12 @@ export default function StatsTab({ data, loading, error }: Props) {
                             ? "bg-[var(--bg-card)] border-[var(--border)]"
                             : "bg-[var(--bg-finished)] border-[var(--border-dim)]"}`}
               style={{ WebkitTouchCallout: "none" } as React.CSSProperties}
-              onMouseDown={() => startPress(s.name)}
+              onMouseDown={() => startPress(s.name, 0, 0)}
               onMouseUp={cancelPress}
               onMouseLeave={cancelPress}
-              onTouchStart={() => startPress(s.name)}
-              onTouchEnd={e => {
-                cancelPress();
-                if (didLongPress.current) e.preventDefault();
-              }}
-              onTouchMove={cancelPress}
+              onTouchStart={e => startPress(s.name, e.touches[0].clientX, e.touches[0].clientY)}
+              onTouchEnd={cancelPress}
+              onTouchMove={cancelPressIfMoved}
               onTouchCancel={cancelPress}
               onClick={() => {
                 if (!didLongPress.current) {
