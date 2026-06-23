@@ -37,7 +37,7 @@ function VideoCard({ v }: { v: VideoResult & { channel?: string } }) {
           <img
             src={`https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg`}
             alt=""
-            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-200"
+            className="w-full h-full object-cover"
           />
           {/* Play button */}
           <div className="absolute inset-0 flex items-center justify-center">
