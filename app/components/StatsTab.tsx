@@ -197,6 +197,7 @@ export default function StatsTab({ data, loading, error }: Props) {
   let prevGoals = -1;
 
   return (
+    <>
     <div className="fadein">
       <SectionLabel>Top Scorers · Golden Boot</SectionLabel>
       <p className="text-[11px] text-[var(--text-faint)] mb-4">Long-press any player for their Wikipedia bio.</p>
@@ -291,14 +292,16 @@ export default function StatsTab({ data, loading, error }: Props) {
         })}
       </div>
 
-      {modalPlayer && (
-        <PlayerModal
-          player={modalPlayer}
-          wiki={wiki}
-          wikiLoading={wikiLoading}
-          onClose={closeModal}
-        />
-      )}
     </div>
+
+    {modalPlayer && (
+      <PlayerModal
+        player={modalPlayer}
+        wiki={wiki}
+        wikiLoading={wikiLoading}
+        onClose={closeModal}
+      />
+    )}
+    </>
   );
 }
