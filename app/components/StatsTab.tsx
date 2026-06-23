@@ -61,8 +61,7 @@ function PlayerModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pt-4"
-      style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -155,9 +154,6 @@ export default function StatsTab({ data, loading, error }: Props) {
     setWikiLoading(false);
   }, []);
 
-  // Guard: ignore close events that arrive within 400ms of the modal opening.
-  // Android fires a synthetic click on the backdrop the instant the finger lifts,
-  // which would otherwise close the modal before the user sees it.
   const closeModal = useCallback(() => {
     if (Date.now() - modalOpenedAt.current < 400) return;
     setModalPlayer(null);
@@ -235,13 +231,11 @@ export default function StatsTab({ data, loading, error }: Props) {
                 didLongPress.current = false;
               }}
             >
-              {/* Rank */}
               <div className={`shrink-0 w-7 text-center font-[family-name:var(--font-display)] font-bold text-[13px]
                                ${getMedalColour(rank)}`}>
                 {rank <= 3 ? getRankLabel(rank) : rank}
               </div>
 
-              {/* Team crest */}
               {s.teamCrest ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img src={s.teamCrest} alt={s.team} className="shrink-0 w-6 h-6 object-contain" />
@@ -249,7 +243,6 @@ export default function StatsTab({ data, loading, error }: Props) {
                 <div className="shrink-0 w-6 h-6 rounded-full bg-[var(--bg-mid)]" />
               )}
 
-              {/* Name + team */}
               <div className="flex-1 min-w-0">
                 <p className="font-[family-name:var(--font-display)] text-[14px] font-semibold text-[var(--text-primary)] leading-tight truncate group-hover:text-[var(--accent)] transition-colors">
                   {s.name}
@@ -259,7 +252,6 @@ export default function StatsTab({ data, loading, error }: Props) {
                 </p>
               </div>
 
-              {/* Stats */}
               <div className="shrink-0 flex items-center gap-4">
                 <div className="text-center">
                   <p className={`font-[family-name:var(--font-display)] text-[20px] font-bold tabular-nums leading-none
