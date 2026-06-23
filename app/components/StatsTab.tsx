@@ -44,10 +44,16 @@ export default function StatsTab({ data, loading, error }: Props) {
 
           const isTop3 = rank <= 3;
 
+          const wikiUrl = `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(s.name)}&go=Go`;
+
           return (
-            <div
+            <a
               key={i}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors
+              href={wikiUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors no-underline
+                          hover:border-[var(--accent)] group
                           ${isTop3
                             ? "bg-[var(--bg-card)] border-[var(--border)]"
                             : "bg-[var(--bg-finished)] border-[var(--border-dim)]"}`}
@@ -72,7 +78,7 @@ export default function StatsTab({ data, loading, error }: Props) {
 
               {/* Name + team */}
               <div className="flex-1 min-w-0">
-                <p className="font-[family-name:var(--font-display)] text-[14px] font-semibold text-[var(--text-primary)] leading-tight truncate">
+                <p className="font-[family-name:var(--font-display)] text-[14px] font-semibold text-[var(--text-primary)] leading-tight truncate group-hover:text-[var(--accent)] transition-colors">
                   {s.name}
                 </p>
                 <p className="text-[11px] text-[var(--text-dim)] mt-0.5">
@@ -107,7 +113,7 @@ export default function StatsTab({ data, loading, error }: Props) {
                   </div>
                 )}
               </div>
-            </div>
+            </a>
           );
         })}
       </div>
