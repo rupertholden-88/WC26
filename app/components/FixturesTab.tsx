@@ -82,6 +82,7 @@ function FixtureRow({ f, tz }: { f: Fixture; tz: string }) {
                  px-4 py-3.5 transition-all duration-200 no-underline group
                  ${cardBg}`}
     >
+
       {/* Main row */}
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Status dot + Time */}

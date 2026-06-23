@@ -76,7 +76,7 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                                      score-digit text-[20px] font-bold font-[family-name:var(--font-display)]
                                      ${!isDraw && r.homeScore > r.awayScore
                                        ? "bg-[var(--accent)] text-[#080e1a]"
-                                       : "bg-[var(--bg-mid)] text-[var(--text-primary)] border border-[var(--border)]"}` }>
+                                       : "bg-[var(--bg-mid)] text-[var(--text-primary)] border border-[var(--border)]"}`}>
                       {r.homeScore}
                     </div>
                     <div className="w-5 h-9 flex items-center justify-center bg-[var(--bg-mid)] border-y border-[var(--border)]">
@@ -86,7 +86,7 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                                      score-digit text-[20px] font-bold font-[family-name:var(--font-display)]
                                      ${!isDraw && r.awayScore > r.homeScore
                                        ? "bg-[var(--accent)] text-[#080e1a]"
-                                       : "bg-[var(--bg-mid)] text-[var(--text-primary)] border border-[var(--border)]"}` }>
+                                       : "bg-[var(--bg-mid)] text-[var(--text-primary)] border border-[var(--border)]"}`}>
                       {r.awayScore}
                     </div>
                   </div>
