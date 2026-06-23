@@ -121,6 +121,24 @@ function PlayerModal({
   );
 }
 
+function BootIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 14"
+      fill="currentColor"
+      className="w-5 h-5"
+      aria-hidden="true"
+      style={{ display: "inline-block" }}
+    >
+      <path d="M0 0h4v8h9q3 0 3 3v1H0V0z"/>
+      <rect x="1" y="12" width="1.5" height="1.5" rx="0.4"/>
+      <rect x="5" y="12" width="1.5" height="1.5" rx="0.4"/>
+      <rect x="9" y="12" width="1.5" height="1.5" rx="0.4"/>
+      <rect x="13" y="12" width="1.5" height="1.5" rx="0.4"/>
+    </svg>
+  );
+}
+
 function getMedalColour(rank: number): string {
   if (rank === 1) return "text-yellow-400";
   if (rank === 2) return "text-slate-300";
@@ -128,10 +146,8 @@ function getMedalColour(rank: number): string {
   return "text-[var(--text-faint)]";
 }
 
-function getRankLabel(rank: number): string {
-  if (rank === 1) return "🥇";
-  if (rank === 2) return "🥈";
-  if (rank === 3) return "🥉";
+function getRankLabel(rank: number): React.ReactNode {
+  if (rank <= 3) return <BootIcon />;
   return String(rank);
 }
 
