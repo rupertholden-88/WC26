@@ -25,11 +25,13 @@ function TeamRow({
   team,
   pos,
   isQual,
+  isConfirmedQual,
   isThirdQual,
 }: {
   team: GroupStanding["teams"][0];
   pos: number;
   isQual: boolean;
+  isConfirmedQual?: boolean;
   isThirdQual?: boolean;
 }) {
   return (
@@ -45,6 +47,12 @@ function TeamRow({
           <span className={`text-[13px] font-medium ${isQual || isThirdQual ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
             {team.name}
           </span>
+          {isConfirmedQual && (
+            <span className="text-[8px] font-bold tracking-widest uppercase px-1 py-px rounded"
+                  style={{ background: "var(--green-dark)", color: "var(--green)" }}>
+              Q
+            </span>
+          )}
           {isThirdQual && (
             <span className="text-[8px] font-bold tracking-widest uppercase px-1 py-px rounded"
                   style={{ background: "var(--green-dark)", color: "var(--green)" }}>
@@ -121,6 +129,7 @@ function GroupCard({ g, qualThirds }: { g: GroupStanding; qualThirds: Set<string
               team={t}
               pos={i + 1}
               isQual={i < 2}
+              isConfirmedQual={i < 2 && t.played === 3}
               isThirdQual={i === 2 && qualThirds.has(t.name)}
             />
           ))}
