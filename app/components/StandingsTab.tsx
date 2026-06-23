@@ -94,6 +94,16 @@ function bestThirdPlace(data: GroupStanding[]): Set<string> {
   return new Set(thirds.slice(0, 8).map(t => t.name));
 }
 
+// A team is mathematically confirmed top-2 if at most 1 other team in the group
+// can still reach their current points (even by winning all remaining games).
+function isConfirmedTopTwo(team: GroupStanding["teams"][0], group: GroupStanding["teams"]): boolean {
+  if (team.played === 0) return false;
+  const canSurpass = group.filter(
+    t => t !== team && t.pts + (3 - t.played) * 3 >= team.pts
+  ).length;
+  return canSurpass <= 1;
+}
+
 function GroupCard({ g, qualThirds }: { g: GroupStanding; qualThirds: Set<string> }) {
   const accent = GROUP_COLORS[g.group] ?? "#f5a623";
   return (
@@ -129,7 +139,7 @@ function GroupCard({ g, qualThirds }: { g: GroupStanding; qualThirds: Set<string
               team={t}
               pos={i + 1}
               isQual={i < 2}
-              isConfirmedQual={i < 2 && t.played === 3}
+              isConfirmedQual={i < 2 && isConfirmedTopTwo(t, g.teams)}
               isThirdQual={i === 2 && qualThirds.has(t.name)}
             />
           ))}
