@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import { TopScorer } from "@/app/lib/claude";
 import { Spinner, ErrorState, EmptyState, SectionLabel } from "./ui";
 
@@ -192,17 +192,16 @@ export default function StatsTab({ data, loading, error }: Props) {
           const wikiUrl = `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(s.name)}&go=Go`;
 
           return (
-            <a
+            <div
               key={i}
-              href={wikiUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors no-underline
+              role="link"
+              tabIndex={0}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors cursor-pointer
                           hover:border-[var(--accent)] group select-none
                           ${isTop3
                             ? "bg-[var(--bg-card)] border-[var(--border)]"
                             : "bg-[var(--bg-finished)] border-[var(--border-dim)]"}`}
-              onContextMenu={e => e.preventDefault()}
+              style={{ WebkitTouchCallout: "none" } as React.CSSProperties}
               onMouseDown={() => startPress(s.name)}
               onMouseUp={cancelPress}
               onMouseLeave={cancelPress}
@@ -213,11 +212,11 @@ export default function StatsTab({ data, loading, error }: Props) {
               }}
               onTouchMove={cancelPress}
               onTouchCancel={cancelPress}
-              onClick={e => {
-                if (didLongPress.current) {
-                  e.preventDefault();
-                  didLongPress.current = false;
+              onClick={() => {
+                if (!didLongPress.current) {
+                  window.open(wikiUrl, "_blank", "noopener,noreferrer");
                 }
+                didLongPress.current = false;
               }}
             >
               {/* Rank */}
@@ -270,7 +269,7 @@ export default function StatsTab({ data, loading, error }: Props) {
                   </div>
                 )}
               </div>
-            </a>
+            </div>
           );
         })}
       </div>
