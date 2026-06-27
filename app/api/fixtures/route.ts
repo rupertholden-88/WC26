@@ -159,8 +159,9 @@ export async function GET() {
         const label = dayLabel(m.utcDate);
         if (!label) return null;
 
-        const home = m.homeTeam.name;
-        const away = m.awayTeam.name;
+        const home = m.homeTeam?.name;
+        const away = m.awayTeam?.name;
+        if (!home || !away) return null;
         const group = m.group
           ? `Group ${m.group.replace("GROUP_", "")}`
           : m.stage?.replace(/_/g, " ") ?? "";
