@@ -36,6 +36,26 @@ export interface Fixture {
   awayProb?: number;
 }
 
+export interface BracketMatch {
+  utcDate: string;
+  displayDate: string;
+  displayTime: string;
+  home: string | null;
+  away: string | null;
+  homeCrest: string | null;
+  awayCrest: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  winner: "HOME" | "AWAY" | null;
+  status: "UPCOMING" | "LIVE" | "FINISHED";
+}
+
+export interface BracketRound {
+  stage: string;
+  label: string;
+  matches: BracketMatch[];
+}
+
 export interface TopScorer {
   name: string;
   nationality: string;
@@ -92,4 +112,9 @@ export async function fetchResults(): Promise<Result[]> {
 export async function fetchScorers(): Promise<TopScorer[]> {
   const data = await apiFetch<{ scorers: TopScorer[] }>("/api/scorers");
   return data.scorers ?? [];
+}
+
+export async function fetchBracket(): Promise<BracketRound[]> {
+  const data = await apiFetch<{ bracket: BracketRound[] }>("/api/bracket");
+  return data.bracket ?? [];
 }

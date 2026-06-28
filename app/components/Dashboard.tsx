@@ -1,22 +1,22 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { VideoResult, GroupStanding, Fixture, Result, TopScorer, fetchVideos, fetchStandings, fetchFixtures, fetchResults, fetchScorers } from "@/app/lib/claude";
+import { VideoResult, BracketRound, Fixture, Result, TopScorer, fetchVideos, fetchBracket, fetchFixtures, fetchResults, fetchScorers } from "@/app/lib/claude";
 import { getStoredTz, DEFAULT_TZ } from "@/app/lib/timezone";
 import VideosTab from "./VideosTab";
-import StandingsTab from "./StandingsTab";
+import BracketTab from "./BracketTab";
 import FixturesTab from "./FixturesTab";
 import ResultsTab from "./ResultsTab";
 import StatsTab from "./StatsTab";
 
-type Tab = "videos" | "results" | "standings" | "fixtures" | "stats";
+type Tab = "videos" | "results" | "bracket" | "fixtures" | "stats";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: "videos",    label: "Highlights", icon: "▶" },
-  { id: "results",   label: "Results",    icon: "⚽" },
-  { id: "standings", label: "Standings",  icon: "⊞" },
-  { id: "fixtures",  label: "Fixtures",   icon: "⊟" },
-  { id: "stats",     label: "Stats",      icon: "★" },
+  { id: "videos",   label: "Highlights", icon: "►" },
+  { id: "results",  label: "Results",    icon: "⚽" },
+  { id: "bracket",  label: "Bracket",    icon: "⊞" },
+  { id: "fixtures", label: "Fixtures",   icon: "⊟" },
+  { id: "stats",    label: "Stats",      icon: "★" },
 ];
 
 const TAB_IDS = TABS.map(t => t.id);
@@ -62,7 +62,7 @@ export default function Dashboard() {
   }, []);
 
   const [videos,   setVideos]   = useState<DataState<VideoResult[]>>(initial());
-  const [standing, setStanding] = useState<DataState<GroupStanding[]>>(initial());
+  const [bracket,  setBracket]  = useState<DataState<BracketRound[]>>(initial());
   const [fixtures, setFixtures] = useState<DataState<Fixture[]>>(initial());
   const [results,  setResults]  = useState<DataState<Result[]>>(initial());
   const [scorers,  setScorers]  = useState<DataState<TopScorer[]>>(initial());
@@ -77,13 +77,13 @@ export default function Dashboard() {
     }
   }, []);
 
-  const loadStandings = useCallback(async () => {
-    setStanding(s => ({ ...s, loading: true, error: null }));
+  const loadBracket = useCallback(async () => {
+    setBracket(s => ({ ...s, loading: true, error: null }));
     try {
-      const data = await fetchStandings();
-      setStanding({ data, loading: false, error: null });
+      const data = await fetchBracket();
+      setBracket({ data, loading: false, error: null });
     } catch (e) {
-      setStanding({ data: null, loading: false, error: `Failed to load standings: ${(e as Error).message}` });
+      setBracket({ data: null, loading: false, error: `Failed to load bracket: ${(e as Error).message}` });
     }
   }, []);
 
@@ -118,8 +118,8 @@ export default function Dashboard() {
   }, []);
 
   const loadAll = useCallback(async () => {
-    await Promise.all([loadVideos(), loadResults(), loadStandings(), loadFixtures(), loadScorers()]);
-  }, [loadVideos, loadResults, loadStandings, loadFixtures, loadScorers]);
+    await Promise.all([loadVideos(), loadResults(), loadBracket(), loadFixtures(), loadScorers()]);
+  }, [loadVideos, loadResults, loadBracket, loadFixtures, loadScorers]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
@@ -216,11 +216,11 @@ export default function Dashboard() {
 
       {/* Content */}
       <div className="py-6" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-        {tab === "videos"    && <VideosTab   data={videos.data}   loading={videos.loading}   error={videos.error} />}
-        {tab === "standings" && <StandingsTab data={standing.data} loading={standing.loading} error={standing.error} />}
-        {tab === "results"   && <ResultsTab   data={results.data}  loading={results.loading}  error={results.error}  tz={tz} />}
-        {tab === "fixtures"  && <FixturesTab  data={fixtures.data} loading={fixtures.loading} error={fixtures.error} tz={tz} />}
-        {tab === "stats"     && <StatsTab     data={scorers.data}  loading={scorers.loading}  error={scorers.error} />}
+        {tab === "videos"   && <VideosTab  data={videos.data}   loading={videos.loading}   error={videos.error} />}
+        {tab === "bracket"  && <BracketTab data={bracket.data}  loading={bracket.loading}  error={bracket.error} />}
+        {tab === "results"  && <ResultsTab  data={results.data}  loading={results.loading}  error={results.error}  tz={tz} />}
+        {tab === "fixtures" && <FixturesTab data={fixtures.data} loading={fixtures.loading} error={fixtures.error} tz={tz} />}
+        {tab === "stats"    && <StatsTab    data={scorers.data}  loading={scorers.loading}  error={scorers.error} />}
       </div>
     </div>
   );
