@@ -78,6 +78,24 @@ const SCHEDULE: Record<string, Channel> = {
   "colombia vs portugal": "BBC",
   "croatia vs ghana": "ITV",
   "panama vs england": "ITV",
+
+  // Round of 32
+  "south africa vs canada": "ITV",
+  "brazil vs japan": "ITV",
+  "netherlands vs morocco": "ITV",
+  "france vs sweden": "ITV",
+  "mexico vs ecuador": "ITV",
+  "belgium vs senegal": "ITV",
+  "argentina vs cape verde": "ITV",
+  "colombia vs ghana": "ITV",
+  "germany vs paraguay": "BBC",
+  "ivory coast vs norway": "BBC",
+  "england vs dr congo": "BBC",
+  "usa vs bosnia-herzegovina": "BBC",
+  "spain vs austria": "BBC",
+  "portugal vs croatia": "BBC",
+  "australia vs egypt": "BBC",
+  "switzerland vs algeria": "BBC",
 };
 
 export function getBroadcaster(home: string, away: string): Channel {
@@ -91,11 +109,12 @@ function normalise(name: string): string {
     .toLowerCase()
     .replace(/curaçao/g, "curacao")
     .replace(/türkiye/g, "turkey")
-    .replace(/côte d['']ivoire/gi, "ivory coast")
+    .replace(/côte d['’]ivoire/gi, "ivory coast")
     .replace(/czechia/gi, "czech republic")
     .replace(/cape verde islands/gi, "cape verde")
     .replace(/bosnia and herzegovina/gi, "bosnia-herzegovina")
     .replace(/democratic republic of congo/gi, "dr congo")
     .replace(/republic of ireland/gi, "ireland")
+    .replace(/\bunited states\b/g, "usa")
     .trim();
 }
