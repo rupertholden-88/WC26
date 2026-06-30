@@ -77,6 +77,9 @@ export interface Result {
   away: string;
   homeScore: number;
   awayScore: number;
+  homePens: number | null;
+  awayPens: number | null;
+  duration: string | null;
   homeScorers: string[];
   awayScorers: string[];
   group: string;
