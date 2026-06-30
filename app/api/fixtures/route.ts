@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getBroadcaster } from "@/app/lib/broadcaster";
+import { fetchPolymarketProbs } from "@/app/lib/polymarket";
 
 export const maxDuration = 30;
 
@@ -72,6 +73,18 @@ type EspnCompetitor = {
   team: { displayName: string };
 };
 
+type Probs = { homeProb: number; drawProb: number; awayProb: number };
+
+// Find a probability entry for a fixture in a "normHome|normAway"-keyed map,
+// using fuzzy team-name matching.
+function lookupProbs(map: Map<string, Probs>, home: string, away: string): Probs | undefined {
+  const key = [...map.keys()].find(k => {
+    const [h, a] = k.split("|");
+    return teamsMatch(home, h) && teamsMatch(away, a);
+  });
+  return key ? map.get(key) : undefined;
+}
+
 export async function GET() {
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) {
@@ -88,11 +101,13 @@ export async function GET() {
     dayMid.setDate(dayMid.getDate() + 1);
     const espnDates = [...new Set([dateFrom, toDateStr(dayMid), toDateStr(dateTo)])].map(d => d.replace(/-/g, ""));
 
-    const [fdRes, ...espnResults] = await Promise.all([
+    const [fdRes, pmProbMap, ...espnResults] = await Promise.all([
       fetch(
         `${FD_BASE}/competitions/${WC_CODE}/matches?dateFrom=${dateFrom}&dateTo=${toDateStr(dateTo)}`,
         { headers: { "X-Auth-Token": apiKey }, next: { revalidate: 300 } }
       ),
+      // Primary odds source: Polymarket prediction-market prices.
+      fetchPolymarketProbs().catch(() => new Map<string, { homeProb: number; drawProb: number; awayProb: number }>()),
       ...espnDates.map(date =>
         fetch(`${ESPN_BASE}/scoreboard?dates=${date}`, { cache: "no-store" })
           .then(r => r.ok ? r.json() : null)
@@ -126,7 +141,7 @@ export async function GET() {
     }
 
     // Fetch ESPN summaries in parallel to extract pickcenter moneyline odds
-    type Probs = { homeProb: number; drawProb: number; awayProb: number };
+    // (fallback source when Polymarket has no market for a fixture).
     const probMap = new Map<string, Probs>();
 
     await Promise.all(
@@ -174,11 +189,8 @@ export async function GET() {
           : minsElapsed > 0  ? "LIVE"
           : "UPCOMING";
 
-        const espnKey = [...probMap.keys()].find(k => {
-          const [h, a] = k.split("|");
-          return teamsMatch(home, h) && teamsMatch(away, a);
-        });
-        const probs = espnKey ? probMap.get(espnKey) : undefined;
+        // Prefer Polymarket prediction-market prices; fall back to ESPN odds.
+        const probs = lookupProbs(pmProbMap, home, away) ?? lookupProbs(probMap, home, away);
 
         return {
           _utc: m.utcDate,
