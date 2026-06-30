@@ -60,7 +60,11 @@ type FdMatch = {
   utcDate: string;
   homeTeam: { id: number; name: string; shortName: string };
   awayTeam: { id: number; name: string; shortName: string };
-  score: { fullTime: { home: number | null; away: number | null } };
+  score: {
+    fullTime: { home: number | null; away: number | null };
+    penalties?: { home: number | null; away: number | null };
+    duration?: string;
+  };
   stage: string;
   group: string | null;
   status: string;
@@ -196,13 +200,22 @@ export async function GET() {
       const { homeScorers = [], awayScorers = [] } = espnEvent
         ? extractScorers(espnEvent, summaryMap)
         : {};
+      // For shootout matches, fullTime holds the cumulative (match + pen) total —
+      // subtract the penalties to recover the actual match score.
+      const isPens = m.score.duration === "PENALTY_SHOOTOUT";
+      const pens = m.score.penalties;
+      const ftHome = m.score.fullTime.home ?? 0;
+      const ftAway = m.score.fullTime.away ?? 0;
       return {
         utcDate: m.utcDate,
         time: toBST(m.utcDate),
         home: m.homeTeam.shortName ?? m.homeTeam.name,
         away: m.awayTeam.shortName ?? m.awayTeam.name,
-        homeScore: m.score.fullTime.home ?? 0,
-        awayScore: m.score.fullTime.away ?? 0,
+        homeScore: isPens && pens?.home != null ? ftHome - pens.home : ftHome,
+        awayScore: isPens && pens?.away != null ? ftAway - pens.away : ftAway,
+        homePens: pens?.home ?? null,
+        awayPens: pens?.away ?? null,
+        duration: m.score.duration ?? null,
         homeScorers,
         awayScorers,
         group: fdGroup(m),
@@ -231,6 +244,9 @@ export async function GET() {
         away: fdMatch?.awayTeam.shortName ?? fdMatch?.awayTeam.name ?? espnAway,
         homeScore: parseInt(homeComp?.score ?? "0") || 0,
         awayScore: parseInt(awayComp?.score ?? "0") || 0,
+        homePens: null,
+        awayPens: null,
+        duration: null,
         homeScorers,
         awayScorers,
         group: fdMatch ? fdGroup(fdMatch) : "",

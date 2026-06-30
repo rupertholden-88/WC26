@@ -26,7 +26,12 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
         <div className="flex flex-col gap-3">
           {data.map((r, i) => {
             const isLive = r.status === "LIVE";
-            const isDraw = r.homeScore === r.awayScore;
+            const isPens =
+              r.duration === "PENALTY_SHOOTOUT" && r.homePens !== null && r.awayPens !== null;
+            const homeWon = isPens ? r.homePens! > r.awayPens! : r.homeScore > r.awayScore;
+            const awayWon = isPens ? r.awayPens! > r.homePens! : r.awayScore > r.homeScore;
+            const isDraw = !homeWon && !awayWon;
+            const penLabel = isPens ? ` (${r.homePens}–${r.awayPens} pens)` : "";
             const hasScorers = r.homeScorers?.length > 0 || r.awayScorers?.length > 0;
 
             const stripeStyle = isLive
@@ -67,14 +72,14 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                 {/* Score row */}
                 <div className="flex items-center justify-between gap-3 pl-2">
                   <span className={`flex-1 text-right font-[family-name:var(--font-display)] text-[16px] font-bold leading-tight
-                                    ${!isDraw && r.homeScore > r.awayScore ? "text-[var(--text-primary)]" : "text-[var(--text-dim)]"}`}>
+                                    ${homeWon ? "text-[var(--text-primary)]" : "text-[var(--text-dim)]"}`}>
                     {r.home}
                   </span>
 
                   <div className="flex items-center gap-px shrink-0">
                     <div className={`w-9 h-9 flex items-center justify-center rounded-l-lg
                                      score-digit text-[20px] font-bold font-[family-name:var(--font-display)]
-                                     ${!isDraw && r.homeScore > r.awayScore
+                                     ${homeWon
                                        ? "bg-[var(--accent)] text-[#080e1a]"
                                        : "bg-[var(--bg-mid)] text-[var(--text-primary)] border border-[var(--border)]"}`}>
                       {r.homeScore}
@@ -84,7 +89,7 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                     </div>
                     <div className={`w-9 h-9 flex items-center justify-center rounded-r-lg
                                      score-digit text-[20px] font-bold font-[family-name:var(--font-display)]
-                                     ${!isDraw && r.awayScore > r.homeScore
+                                     ${awayWon
                                        ? "bg-[var(--accent)] text-[#080e1a]"
                                        : "bg-[var(--bg-mid)] text-[var(--text-primary)] border border-[var(--border)]"}`}>
                       {r.awayScore}
@@ -92,7 +97,7 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                   </div>
 
                   <span className={`flex-1 text-left font-[family-name:var(--font-display)] text-[16px] font-bold leading-tight
-                                    ${!isDraw && r.awayScore > r.homeScore ? "text-[var(--text-primary)]" : "text-[var(--text-dim)]"}`}>
+                                    ${awayWon ? "text-[var(--text-primary)]" : "text-[var(--text-dim)]"}`}>
                     {r.away}
                   </span>
                 </div>
@@ -122,7 +127,7 @@ export default function ResultsTab({ data, loading, error, tz }: Props) {
                     </span>
                   ) : (
                     <>
-                      {isDraw ? "DRAW" : r.homeScore > r.awayScore ? r.home.toUpperCase() + " WIN" : r.away.toUpperCase() + " WIN"}
+                      {isDraw ? "DRAW" : homeWon ? r.home.toUpperCase() + " WIN" + penLabel : r.away.toUpperCase() + " WIN" + penLabel}
                       <span className="mx-2 text-[var(--border)]">·</span>
                       {r.utcDate ? formatInTz(r.utcDate, tz) : r.time} {tzAbbr}
                     </>
