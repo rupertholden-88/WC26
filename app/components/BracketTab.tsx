@@ -65,6 +65,18 @@ function TeamRow({
 function MatchCard({ m }: { m: BracketMatch }) {
   const isLive = m.status === "LIVE";
   const isFinished = m.status === "FINISHED";
+  const isPens = m.duration === "PENALTY_SHOOTOUT";
+
+  // API stores cumulative (match goals + pen goals) in fullTime for shootout matches.
+  // Subtract penalties to recover the actual match score.
+  const homeMatchScore =
+    isPens && m.homeScore !== null && m.homePens !== null
+      ? m.homeScore - m.homePens
+      : m.homeScore;
+  const awayMatchScore =
+    isPens && m.awayScore !== null && m.awayPens !== null
+      ? m.awayScore - m.awayPens
+      : m.awayScore;
 
   const stripeInline = isLive
     ? undefined
@@ -76,6 +88,16 @@ function MatchCard({ m }: { m: BracketMatch }) {
   const cardClass = isLive
     ? "bg-[var(--bg-live)] border-[var(--border-live)]"
     : "bg-[var(--bg-card)] border-[var(--border)]";
+
+  const winnerName =
+    m.winner === "HOME" ? (m.home ?? "Home") : m.winner === "AWAY" ? (m.away ?? "Away") : null;
+
+  const penSuffix =
+    isPens && m.homePens !== null && m.awayPens !== null
+      ? ` (${m.homePens}–${m.awayPens} pens)`
+      : isPens
+        ? " (pens)"
+        : "";
 
   return (
     <div className={`result-card border rounded-xl px-4 py-3 relative overflow-hidden ${cardClass}`}>
@@ -89,7 +111,7 @@ function MatchCard({ m }: { m: BracketMatch }) {
         <TeamRow
           name={m.home}
           crest={m.homeCrest}
-          score={m.homeScore}
+          score={homeMatchScore}
           isWinner={m.winner === "HOME"}
           align="left"
         />
@@ -97,7 +119,7 @@ function MatchCard({ m }: { m: BracketMatch }) {
         <TeamRow
           name={m.away}
           crest={m.awayCrest}
-          score={m.awayScore}
+          score={awayMatchScore}
           isWinner={m.winner === "AWAY"}
           align="left"
         />
@@ -108,8 +130,8 @@ function MatchCard({ m }: { m: BracketMatch }) {
           <span className="text-orange-400 font-semibold">● LIVE</span>
         ) : isFinished ? (
           <span className="text-[var(--text-dim)]">
-            {m.winner === "HOME" ? (m.home ?? "Home").toUpperCase() + " WIN"
-              : m.winner === "AWAY" ? (m.away ?? "Away").toUpperCase() + " WIN"
+            {winnerName
+              ? winnerName.toUpperCase() + " WIN" + penSuffix
               : "FINISHED"}
           </span>
         ) : (

@@ -64,6 +64,8 @@ export async function GET() {
       const awayTeam = m.awayTeam as Record<string, unknown> | null;
       const score = m.score as Record<string, unknown> | null;
       const fullTime = score?.fullTime as Record<string, number | null> | null;
+      const penScore = score?.penalties as Record<string, number | null> | null;
+      const duration = score?.duration as string | null;
       const winner = score?.winner as string | null;
 
       const utcDate = m.utcDate as string;
@@ -82,6 +84,9 @@ export async function GET() {
         awayCrest: (awayTeam?.crest as string) ?? null,
         homeScore: fullTime?.home ?? null,
         awayScore: fullTime?.away ?? null,
+        homePens: penScore?.home ?? null,
+        awayPens: penScore?.away ?? null,
+        duration: duration ?? null,
         winner: winner === "HOME_TEAM" ? "HOME" : winner === "AWAY_TEAM" ? "AWAY" : null,
         status,
       });

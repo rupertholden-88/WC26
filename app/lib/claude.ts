@@ -46,6 +46,9 @@ export interface BracketMatch {
   awayCrest: string | null;
   homeScore: number | null;
   awayScore: number | null;
+  homePens: number | null;
+  awayPens: number | null;
+  duration: string | null;
   winner: "HOME" | "AWAY" | null;
   status: "UPCOMING" | "LIVE" | "FINISHED";
 }
