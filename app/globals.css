@@ -238,3 +238,27 @@ body {
   background: linear-gradient(90deg, transparent, rgba(45,122,79,0.4), transparent);
   margin: 16px 0;
 }
+
+/* ─── Score pop (live score change) ─── */
+@keyframes score-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.45); }
+  100% { transform: scale(1); }
+}
+.score-pop {
+  display: inline-block;
+  animation: score-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─── My-team highlight ─── */
+.my-team-glow {
+  border-color: rgba(245, 166, 35, 0.45) !important;
+  box-shadow: 0 0 18px rgba(245, 166, 35, 0.1);
+}
+
+/* ─── Respect reduced-motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  .score-pop, .pulse-dot, .pitch-stripe, .trophy-glow, .broadcast-ring, .spin, .shimmer {
+    animation: none !important;
+  }
+}
