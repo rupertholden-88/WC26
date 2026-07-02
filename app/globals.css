@@ -215,6 +215,18 @@ body {
   -webkit-text-fill-color: transparent;
   color: transparent;
 }
+/* Light theme: the white mid-band vanishes on a light page — use silver instead */
+:root[data-theme="light"] .flag-text {
+  background-image: linear-gradient(
+    180deg,
+    #c22a3a 0%,
+    #9a1c2c 34%,
+    #aab8cc 46%,
+    #aab8cc 54%,
+    #46549e 66%,
+    #2e2d56 100%
+  );
+}
 
 /* ─── Score digit ─── */
 .score-digit {
