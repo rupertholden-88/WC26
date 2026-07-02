@@ -29,8 +29,16 @@ export function EmptyState({ message }: { message: string }) {
 
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="font-[family-name:var(--font-display)] text-[10px] font-semibold tracking-[0.22em] text-[var(--text-dim)] uppercase mb-4">
-      {children}
-    </p>
+    <div className="flex items-center gap-2.5 mb-4">
+      <span className="w-[3px] h-3.5 rounded-full bg-[var(--accent)] shrink-0" aria-hidden />
+      <p className="font-[family-name:var(--font-display)] text-[10px] font-semibold tracking-[0.22em] text-[var(--text-dim)] uppercase shrink-0">
+        {children}
+      </p>
+      <span
+        className="flex-1 h-px min-w-4"
+        style={{ background: "linear-gradient(90deg, var(--border), transparent)" }}
+        aria-hidden
+      />
+    </div>
   );
 }

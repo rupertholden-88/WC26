@@ -15,7 +15,7 @@ function VideoCard({ v }: { v: VideoResult & { channel?: string } }) {
 
   return (
     <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl overflow-hidden
-                    card-glow transition-all duration-200">
+                    card-glow transition-all duration-200 hover:-translate-y-[2px]">
       {playing ? (
         /* Embedded YouTube player */
         <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
@@ -39,12 +39,16 @@ function VideoCard({ v }: { v: VideoResult & { channel?: string } }) {
             alt=""
             className="w-full h-full object-cover"
           />
-          {/* Play button */}
+          {/* Bottom scrim so badges read over busy thumbnails */}
+          <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/55 to-transparent pointer-events-none" />
+          {/* Play button — glass disc, fills amber on hover */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-14 h-14 rounded-full bg-[var(--accent)] flex items-center justify-center
-                            shadow-xl group-hover:scale-110 transition-transform duration-200">
-              <svg width="16" height="18" viewBox="0 0 12 14" fill="none">
-                <path d="M1 1L11 7L1 13V1Z" fill="#080e1a" />
+            <div className="w-14 h-14 rounded-full bg-black/45 backdrop-blur-sm ring-1 ring-white/30
+                            flex items-center justify-center shadow-2xl text-white
+                            group-hover:scale-110 group-hover:bg-[var(--accent)] group-hover:text-[#080e1a] group-hover:ring-transparent
+                            transition-all duration-200">
+              <svg width="16" height="18" viewBox="0 0 12 14" fill="none" className="translate-x-[1px]">
+                <path d="M1 1L11 7L1 13V1Z" fill="currentColor" />
               </svg>
             </div>
           </div>
@@ -103,7 +107,9 @@ export default function VideosTab({ data, loading, error }: Props) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 landscape:grid-cols-2 gap-4 items-start">
           {data.map((v, i) => (
-            <VideoCard key={i} v={v as VideoResult & { channel?: string }} />
+            <div key={i} className="fadein" style={{ animationDelay: `${Math.min(i, 8) * 60}ms` }}>
+              <VideoCard v={v as VideoResult & { channel?: string }} />
+            </div>
           ))}
         </div>
       )}

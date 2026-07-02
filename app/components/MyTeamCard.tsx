@@ -124,14 +124,41 @@ export default function MyTeamCard({ team, bracket, results, tz, onChange }: Pro
       </>
     );
   } else if (last) {
-    const mineSide = isTeam(last.m.home, team) ? "HOME" : "AWAY";
-    const won = last.m.winner === mineSide;
-    body = (
-      <p className="text-center text-[12px] text-[var(--text-secondary)] font-medium py-1">
-        {won
-          ? <>Through to the next round — opponent TBD <span className="text-[var(--text-dim)]">({last.round} won)</span></>
-          : <>Knocked out in the {last.round} <span className="text-[var(--text-dim)]">💔</span></>}
-      </p>
+    const lm = last.m;
+    const mineSide = isTeam(lm.home, team) ? "HOME" : "AWAY";
+    const won = lm.winner === mineSide;
+
+    // The round after the one just played, if the bracket knows it yet
+    const roundIdx = (bracket ?? []).findIndex(r => r.label === last.round);
+    const nextRound = roundIdx >= 0 ? bracket?.[roundIdx + 1]?.label : undefined;
+
+    // Recover the real match score for shootout games (fullTime is cumulative)
+    const wasPens = lm.duration === "PENALTY_SHOOTOUT" && lm.homePens !== null && lm.awayPens !== null;
+    const homeGoals = wasPens ? (lm.homeScore ?? 0) - (lm.homePens ?? 0) : lm.homeScore;
+    const awayGoals = wasPens ? (lm.awayScore ?? 0) - (lm.awayPens ?? 0) : lm.awayScore;
+    const scoreline = `${lm.home} ${homeGoals}–${awayGoals} ${lm.away}${wasPens ? ` · ${lm.homePens}–${lm.awayPens} pens` : ""}`;
+
+    body = won ? (
+      <div className="flex flex-col items-center gap-1 py-0.5">
+        <div className="flex items-center gap-2">
+          <span className="flex items-center justify-center w-[18px] h-[18px] rounded-full bg-[var(--green)] text-[#080e1a] text-[11px] font-bold leading-none">✓</span>
+          <span className="font-[family-name:var(--font-display)] text-[16px] font-bold tracking-wide uppercase text-[var(--green)]">
+            Through to the {nextRound ?? "next round"}
+          </span>
+        </div>
+        <p className="text-[10px] text-[var(--text-dim)] tracking-[0.16em] uppercase">
+          Won {scoreline} · opponent TBD
+        </p>
+      </div>
+    ) : (
+      <div className="flex flex-col items-center gap-1 py-0.5">
+        <span className="font-[family-name:var(--font-display)] text-[16px] font-bold tracking-wide uppercase text-[var(--text-secondary)]">
+          Knocked out · {last.round}
+        </span>
+        <p className="text-[10px] text-[var(--text-dim)] tracking-[0.16em] uppercase">
+          {scoreline}
+        </p>
+      </div>
     );
   } else {
     body = (
@@ -149,8 +176,9 @@ export default function MyTeamCard({ team, bracket, results, tz, onChange }: Pro
         </p>
         <button
           onClick={onChange}
-          className="text-[9px] tracking-widest uppercase font-semibold text-[var(--text-dim)]
-                     hover:text-[var(--accent)] cursor-pointer transition-colors"
+          className="text-[8px] tracking-[0.14em] uppercase font-semibold text-[var(--text-faint)]
+                     hover:text-[var(--accent)] border border-[var(--border-dim)] hover:border-[var(--accent)]
+                     rounded-full px-2 py-[3px] cursor-pointer transition-colors"
         >
           Change
         </button>

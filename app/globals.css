@@ -196,20 +196,20 @@ body {
 }
 .trophy-glow { animation: trophy-glow 3s ease infinite; }
 
-/* ─── US-flag-filled "26" in the WC26 title ─── */
+/* ─── US-colours-filled "26" in the WC26 title ─── */
+/* Vertical red → white → blue tri-band. Reads as intentional at any size —
+   the old 13-stripe fill collapsed into what looked like strikethrough at
+   mobile font sizes. */
 .flag-text {
-  background-image:
-    /* blue canton, top-left (40% × 53.8% — true flag proportions) */
-    linear-gradient(#3c3b6e, #3c3b6e),
-    /* 13 red & white stripes */
-    repeating-linear-gradient(
-      180deg,
-      #b22234 0,        #b22234 7.69%,
-      #ffffff 7.69%,    #ffffff 15.38%
-    );
-  background-size: 40% 53.8%, 100% 100%;
-  background-position: left top, left top;
-  background-repeat: no-repeat, no-repeat;
+  background-image: linear-gradient(
+    180deg,
+    #e04a56 0%,
+    #b22234 34%,
+    #f0f4f8 46%,
+    #f0f4f8 54%,
+    #6272d9 66%,
+    #3c3b6e 100%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
