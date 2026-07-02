@@ -1,18 +1,22 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { VideoResult, BracketRound, Fixture, Result, TopScorer, fetchVideos, fetchBracket, fetchFixtures, fetchResults, fetchScorers } from "@/app/lib/claude";
 import { getStoredTz, DEFAULT_TZ } from "@/app/lib/timezone";
+import { getStoredTeam, setStoredTeam } from "@/app/lib/myteam";
 import VideosTab from "./VideosTab";
 import BracketTab from "./BracketTab";
 import FixturesTab from "./FixturesTab";
 import ResultsTab from "./ResultsTab";
 import StatsTab from "./StatsTab";
+import LiveBanner from "./LiveBanner";
+import MyTeamCard from "./MyTeamCard";
+import TeamPicker from "./TeamPicker";
 
 type Tab = "videos" | "results" | "bracket" | "fixtures" | "stats";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: "videos",   label: "Highlights", icon: "►" },
+  { id: "videos",   label: "Highlights", icon: "▶" },
   { id: "results",  label: "Results",    icon: "⚽" },
   { id: "bracket",  label: "Bracket",    icon: "⊞" },
   { id: "fixtures", label: "Fixtures",   icon: "⊟" },
@@ -43,8 +47,16 @@ export default function Dashboard() {
   const [tab, setTab] = useState<Tab>("videos");
   const [tz, setTz] = useState<string>(DEFAULT_TZ);
   const [pullDistance, setPullDistance] = useState(0);
+  const [myTeam, setMyTeam] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  useEffect(() => { setTz(getStoredTz()); }, []);
+  useEffect(() => { setTz(getStoredTz()); setMyTeam(getStoredTeam()); }, []);
+
+  const pickTeam = useCallback((name: string | null) => {
+    setStoredTeam(name);
+    setMyTeam(name);
+    setPickerOpen(false);
+  }, []);
 
   // Sync tab from URL on mount and on browser back/forward
   useEffect(() => {
@@ -67,8 +79,10 @@ export default function Dashboard() {
   const [results,  setResults]  = useState<DataState<Result[]>>(initial());
   const [scorers,  setScorers]  = useState<DataState<TopScorer[]>>(initial());
 
+  // Loaders show the spinner only on first load — refreshes update in place
+  // so live polling doesn't flash content away every cycle.
   const loadVideos = useCallback(async () => {
-    setVideos(s => ({ ...s, loading: true, error: null }));
+    setVideos(s => ({ ...s, loading: s.data === null, error: null }));
     try {
       const data = await fetchVideos();
       setVideos({ data, loading: false, error: null });
@@ -78,7 +92,7 @@ export default function Dashboard() {
   }, []);
 
   const loadBracket = useCallback(async () => {
-    setBracket(s => ({ ...s, loading: true, error: null }));
+    setBracket(s => ({ ...s, loading: s.data === null, error: null }));
     try {
       const data = await fetchBracket();
       setBracket({ data, loading: false, error: null });
@@ -88,27 +102,27 @@ export default function Dashboard() {
   }, []);
 
   const loadResults = useCallback(async () => {
-    setResults(s => ({ ...s, loading: true, error: null }));
+    setResults(s => ({ ...s, loading: s.data === null, error: null }));
     try {
       const data = await fetchResults();
       setResults({ data, loading: false, error: null });
     } catch (e) {
-      setResults({ data: null, loading: false, error: "Failed to load results" });
+      setResults(s => s.data ? s : { data: null, loading: false, error: "Failed to load results" });
     }
   }, []);
 
   const loadFixtures = useCallback(async () => {
-    setFixtures(s => ({ ...s, loading: true, error: null }));
+    setFixtures(s => ({ ...s, loading: s.data === null, error: null }));
     try {
       const data = await fetchFixtures();
       setFixtures({ data, loading: false, error: null });
     } catch (e) {
-      setFixtures({ data: null, loading: false, error: `Failed to load fixtures: ${(e as Error).message}` });
+      setFixtures(s => s.data ? s : { data: null, loading: false, error: `Failed to load fixtures: ${(e as Error).message}` });
     }
   }, []);
 
   const loadScorers = useCallback(async () => {
-    setScorers(s => ({ ...s, loading: true, error: null }));
+    setScorers(s => ({ ...s, loading: s.data === null, error: null }));
     try {
       const data = await fetchScorers();
       setScorers({ data, loading: false, error: null });
@@ -133,6 +147,31 @@ export default function Dashboard() {
       clearInterval(timer);
     };
   }, [loadAll]);
+
+  // Minute ticker so the live-window check below re-evaluates as kickoffs approach
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick(x => x + 1), 60 * 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // A match is live, or kickoff is within 5 min (through ~ET + pens length)
+  const liveWindow = useMemo(() => {
+    void tick;
+    const hasLive = (results.data ?? []).some(r => r.status === "LIVE");
+    const nearKickoff = (fixtures.data ?? []).some(f => {
+      const mins = (Date.now() - new Date(f.utcDate).getTime()) / 60000;
+      return mins > -5 && mins < 160;
+    });
+    return hasLive || nearKickoff;
+  }, [results.data, fixtures.data, tick]);
+
+  // During live windows, poll scores every 45s instead of hourly
+  useEffect(() => {
+    if (!liveWindow) return;
+    const t = setInterval(() => { loadResults(); loadFixtures(); }, 45 * 1000);
+    return () => clearInterval(t);
+  }, [liveWindow, loadResults, loadFixtures]);
 
   // Touch gesture refs
   const touchStartX = useRef(0);
@@ -176,6 +215,9 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      {/* Live matches strip — pinned on every tab while a match is in play */}
+      <LiveBanner results={results.data} onOpen={() => navigateToTab("results")} />
+
       {/* Pull-to-refresh indicator */}
       <div
         className="flex justify-center items-end overflow-hidden transition-all duration-150"
@@ -191,6 +233,30 @@ export default function Dashboard() {
             stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
           />
         </svg>
+      </div>
+
+      {/* My team */}
+      <div className="mb-3">
+        {myTeam ? (
+          <MyTeamCard
+            team={myTeam}
+            bracket={bracket.data}
+            results={results.data}
+            tz={tz}
+            onChange={() => setPickerOpen(true)}
+          />
+        ) : (
+          <div className="flex justify-end">
+            <button
+              onClick={() => setPickerOpen(true)}
+              className="text-[10px] tracking-widest uppercase font-semibold text-[var(--text-dim)]
+                         hover:text-[var(--accent)] hover:border-[var(--accent)] border border-[var(--border)]
+                         rounded-full px-3 py-1 transition-colors cursor-pointer"
+            >
+              ★ Pick your team
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tab bar */}
@@ -217,11 +283,15 @@ export default function Dashboard() {
       {/* Content */}
       <div className="py-6" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         {tab === "videos"   && <VideosTab  data={videos.data}   loading={videos.loading}   error={videos.error} />}
-        {tab === "bracket"  && <BracketTab data={bracket.data}  loading={bracket.loading}  error={bracket.error} />}
+        {tab === "bracket"  && <BracketTab data={bracket.data}  loading={bracket.loading}  error={bracket.error}  myTeam={myTeam} />}
         {tab === "results"  && <ResultsTab  data={results.data}  loading={results.loading}  error={results.error}  tz={tz} />}
         {tab === "fixtures" && <FixturesTab data={fixtures.data} loading={fixtures.loading} error={fixtures.error} tz={tz} />}
         {tab === "stats"    && <StatsTab    data={scorers.data}  loading={scorers.loading}  error={scorers.error} />}
       </div>
+
+      {pickerOpen && (
+        <TeamPicker current={myTeam} onSelect={pickTeam} onClose={() => setPickerOpen(false)} />
+      )}
     </div>
   );
 }
