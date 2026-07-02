@@ -36,13 +36,12 @@ export default function Header() {
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <div className="relative flex items-center justify-center w-5 h-5">
-                <span className="broadcast-ring absolute inset-0 rounded-full border border-[var(--green)]" />
-                <span className="pulse-dot w-2 h-2 rounded-full bg-[var(--green)] inline-block relative z-10" />
+              <div className="flex items-center gap-1.5 rounded-full px-2.5 py-[3px] bg-[var(--bg-live)] border border-[rgba(45,122,79,0.45)]">
+                <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-[var(--green)] inline-block" />
+                <span className="font-[family-name:var(--font-display)] text-[10px] font-semibold tracking-[0.2em] text-[var(--green)] uppercase">
+                  Live
+                </span>
               </div>
-              <span className="font-[family-name:var(--font-display)] text-[13px] font-semibold tracking-[0.2em] text-[var(--green)] uppercase">
-                Live
-              </span>
             </div>
           </div>
           {/* Single-line title */}
@@ -82,13 +81,12 @@ export default function Header() {
             </p>
             <div className="flex items-center justify-end gap-2 mt-3">
               <ThemeToggle />
-              <div className="relative flex items-center justify-center w-5 h-5">
-                <span className="broadcast-ring absolute inset-0 rounded-full border border-[var(--green)]" />
-                <span className="pulse-dot w-2 h-2 rounded-full bg-[var(--green)] inline-block relative z-10" />
+              <div className="flex items-center gap-1.5 rounded-full px-2.5 py-[3px] bg-[var(--bg-live)] border border-[rgba(45,122,79,0.45)]">
+                <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-[var(--green)] inline-block" />
+                <span className="font-[family-name:var(--font-display)] text-[10px] font-semibold tracking-[0.2em] text-[var(--green)] uppercase">
+                  Live
+                </span>
               </div>
-              <span className="font-[family-name:var(--font-display)] text-[13px] font-semibold tracking-[0.2em] text-[var(--green)] uppercase">
-                Live
-              </span>
             </div>
             <div className="mt-4 text-[var(--border)] text-[28px] select-none" aria-hidden>🏟️</div>
           </div>
