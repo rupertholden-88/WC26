@@ -236,7 +236,7 @@ export default function Dashboard() {
       </div>
 
       {/* My team */}
-      <div className="mb-3">
+      <div className="mt-4 mb-3">
         {myTeam ? (
           <MyTeamCard
             team={myTeam}
