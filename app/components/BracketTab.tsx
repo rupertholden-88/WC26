@@ -1,12 +1,14 @@
 "use client";
 
 import { BracketRound, BracketMatch } from "@/app/lib/claude";
+import { isTeam } from "@/app/lib/myteam";
 import { Spinner, ErrorState, EmptyState, SectionLabel } from "./ui";
 
 interface Props {
   data: BracketRound[] | null;
   loading: boolean;
   error: string | null;
+  myTeam?: string | null;
 }
 
 function TeamRow({
@@ -14,12 +16,14 @@ function TeamRow({
   crest,
   score,
   isWinner,
+  isMine,
   align,
 }: {
   name: string | null;
   crest: string | null;
   score: number | null;
   isWinner: boolean;
+  isMine: boolean;
   align: "left" | "right";
 }) {
   const nameEl = (
@@ -27,6 +31,7 @@ function TeamRow({
       className={`font-[family-name:var(--font-display)] text-[15px] font-bold leading-tight truncate
                   ${isWinner ? "text-[var(--accent)]" : "text-[var(--text-primary)]"}`}
     >
+      {isMine && <span className="text-[var(--accent)] text-[10px] mr-1 align-middle">★</span>}
       {name ?? "TBD"}
     </span>
   );
@@ -62,10 +67,13 @@ function TeamRow({
   );
 }
 
-function MatchCard({ m }: { m: BracketMatch }) {
+function MatchCard({ m, myTeam }: { m: BracketMatch; myTeam?: string | null }) {
   const isLive = m.status === "LIVE";
   const isFinished = m.status === "FINISHED";
   const isPens = m.duration === "PENALTY_SHOOTOUT";
+  const homeIsMine = !!myTeam && isTeam(m.home, myTeam);
+  const awayIsMine = !!myTeam && isTeam(m.away, myTeam);
+  const involvesMine = homeIsMine || awayIsMine;
 
   // API stores cumulative (match goals + pen goals) in fullTime for shootout matches.
   // Subtract penalties to recover the actual match score.
@@ -100,7 +108,7 @@ function MatchCard({ m }: { m: BracketMatch }) {
         : "";
 
   return (
-    <div className={`result-card border rounded-xl px-4 py-3 relative overflow-hidden ${cardClass}`}>
+    <div className={`result-card border rounded-xl px-4 py-3 relative overflow-hidden ${cardClass} ${involvesMine ? "my-team-glow" : ""}`}>
       {/* Left accent stripe */}
       <div
         className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl ${stripeClass}`}
@@ -113,6 +121,7 @@ function MatchCard({ m }: { m: BracketMatch }) {
           crest={m.homeCrest}
           score={homeMatchScore}
           isWinner={m.winner === "HOME"}
+          isMine={homeIsMine}
           align="left"
         />
         <div className="h-px bg-[var(--border-dim)] mx-8" />
@@ -121,6 +130,7 @@ function MatchCard({ m }: { m: BracketMatch }) {
           crest={m.awayCrest}
           score={awayMatchScore}
           isWinner={m.winner === "AWAY"}
+          isMine={awayIsMine}
           align="left"
         />
       </div>
@@ -144,7 +154,7 @@ function MatchCard({ m }: { m: BracketMatch }) {
   );
 }
 
-export default function BracketTab({ data, loading, error }: Props) {
+export default function BracketTab({ data, loading, error, myTeam }: Props) {
   if (loading) return <Spinner />;
   if (error) return <ErrorState message={error} />;
   if (!data || data.length === 0) {
@@ -158,7 +168,7 @@ export default function BracketTab({ data, loading, error }: Props) {
           <SectionLabel>{round.label}</SectionLabel>
           <div className="flex flex-col gap-3">
             {(round.matches as BracketMatch[]).map((m, i) => (
-              <MatchCard key={i} m={m} />
+              <MatchCard key={i} m={m} myTeam={myTeam} />
             ))}
           </div>
         </div>
